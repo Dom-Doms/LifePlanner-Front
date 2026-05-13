@@ -356,6 +356,78 @@ textarea {
   min-width: 0;
 }
 
+.timeline--day-grid {
+  position: relative;
+  overflow: visible;
+  padding-left: 0;
+}
+
+.timeline-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.timeline-hour {
+  position: relative;
+  height: 48px;
+  border-top: 1px solid var(--app-border);
+}
+
+.timeline-hour span {
+  position: absolute;
+  left: 0;
+  top: -8px;
+  width: 52px;
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--app-surface);
+}
+
+.timeline-item--positioned {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.current-time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ef4444;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.current-time-dot {
+  position: absolute;
+  left: 52px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #ef4444;
+  transform: translate(-50%, -50%);
+}
+
+.current-time-label {
+  position: absolute;
+  left: 66px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 800;
+  color: #ef4444;
+  background: var(--app-surface);
+  padding: 2px 6px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+}
+
 .timeline-item time {
   color: var(--app-muted);
   font-weight: 800;
@@ -530,7 +602,7 @@ textarea {
   background: rgba(255, 255, 255, 0.92);
   border-top: 1px solid var(--app-border);
   backdrop-filter: blur(16px);
-  z-index: 20;
+  z-index: 50;
 }
 
 .bottom-nav__item {
@@ -563,10 +635,11 @@ textarea {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 1000;
   background: rgba(23, 32, 51, 0.36);
   display: grid;
   align-items: end;
+  overflow: hidden;
 }
 
 .modal {
@@ -579,6 +652,85 @@ textarea {
   gap: 14px;
   background: var(--app-surface);
   border-radius: 24px 24px 0 0;
+  z-index: 1001;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.event-modal {
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -18px 42px rgba(23, 32, 51, 0.18);
+}
+
+.event-modal__header {
+  flex: 0 0 auto;
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-surface);
+}
+
+.event-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px calc(96px + env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+}
+
+.event-modal__footer {
+  position: sticky;
+  bottom: 0;
+  flex: 0 0 auto;
+  padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--app-border);
+  background: var(--app-surface);
+}
+
+.event-modal__footer .primary-btn {
+  margin-left: auto;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.field-error {
+  color: var(--app-danger);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.form-alert {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  background: #fef2f2;
+  color: var(--app-danger);
+  font-weight: 800;
+}
+
+.form-field--invalid input,
+.form-field--invalid select,
+.form-field--invalid textarea {
+  border-color: var(--app-danger);
+  outline: 2px solid rgba(220, 38, 38, 0.16);
 }
 
 .modal-header {

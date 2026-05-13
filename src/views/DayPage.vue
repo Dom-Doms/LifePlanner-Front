@@ -16,14 +16,14 @@
     />
 
     <section class="quick-actions">
-      <button class="primary-btn" type="button" @click="eventOpen = true">+ Evento</button>
-      <button class="secondary-btn" type="button" @click="workoutOpen = true">+ Allenamento</button>
+      <button class="primary-btn" type="button" @click="openEventModal">+ Evento</button>
+      <button class="secondary-btn" type="button" @click="openWorkoutModal">+ Allenamento</button>
     </section>
 
     <p v-if="feedback" class="success-text">{{ feedback }}</p>
     <p v-if="error" class="error-text">{{ error }}</p>
 
-    <DayTimeline :events="planning.events" @select="selectedEvent = $event" />
+    <DayTimeline :date="date" :events="planning.events" @select="openSelectedEventModal" />
 
     <section v-if="workouts.daySessions.length" class="panel">
       <div class="panel__header">
@@ -38,14 +38,23 @@
         :count="session.exercises.length"
       />
     </section>
-    <EventFormModal v-if="eventOpen" :date="date" @close="eventOpen = false" @save="saveEvent" />
+    <EventFormModal
+      v-if="eventOpen"
+      :date="date"
+      :server-error="eventFormError"
+      :server-field-errors="eventFormFieldErrors"
+      @close="closeEventModal"
+      @save="saveEvent"
+    />
     <EventFormModal
       v-if="workoutOpen"
       title="Aggiungi allenamento"
       :date="date"
       :templates="workouts.templates"
+      :server-error="eventFormError"
+      :server-field-errors="eventFormFieldErrors"
       workout-mode
-      @close="workoutOpen = false"
+      @close="closeWorkoutModal"
       @save="saveWorkoutEvent"
     />
     <EventFormModal
@@ -53,7 +62,9 @@
       :date="date"
       :event="selectedEvent"
       :templates="workouts.templates"
-      @close="selectedEvent = null"
+      :server-error="eventFormError"
+      :server-field-errors="eventFormFieldErrors"
+      @close="closeSelectedEventModal"
       @save="saveEvent"
       @delete="deleteEvent"
     />
@@ -62,6 +73,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import axios from 'axios';
 import { useRoute } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ContextSelector from '@/components/ContextSelector.vue';
@@ -82,12 +94,55 @@ const workoutOpen = ref(false);
 const selectedEvent = ref<CalendarEventResponse | null>(null);
 const feedback = ref('');
 const error = ref('');
+const eventFormError = ref('');
+const eventFormFieldErrors = ref<Record<string, string | string[]>>({});
 
 const date = computed(() => (route.params.date as string | undefined) ?? todayIso());
 const plan = computed(() => planning.currentPlan);
 
 const load = async () => {
   await Promise.all([planning.loadDay(date.value), workouts.loadTemplates(), workouts.loadDaySessions(date.value)]);
+};
+
+const clearEventFormErrors = () => {
+  eventFormError.value = '';
+  eventFormFieldErrors.value = {};
+};
+
+const openEventModal = () => {
+  clearEventFormErrors();
+  eventOpen.value = true;
+};
+
+const openWorkoutModal = () => {
+  clearEventFormErrors();
+  workoutOpen.value = true;
+};
+
+const openSelectedEventModal = (event: CalendarEventResponse) => {
+  clearEventFormErrors();
+  selectedEvent.value = event;
+};
+
+const closeEventModal = () => {
+  clearEventFormErrors();
+  eventOpen.value = false;
+};
+
+const closeWorkoutModal = () => {
+  clearEventFormErrors();
+  workoutOpen.value = false;
+};
+
+const closeSelectedEventModal = () => {
+  clearEventFormErrors();
+  selectedEvent.value = null;
+};
+
+const extractFieldErrors = (err: unknown) => {
+  if (!axios.isAxiosError(err)) return {};
+  const data = err.response?.data as { fieldErrors?: Record<string, string | string[]>; errors?: Record<string, string | string[]> } | undefined;
+  return data?.fieldErrors ?? data?.errors ?? {};
 };
 
 const changeContext = async (contextId: number | null, recurrenceType: RecurrenceType = 'NONE', recurrenceUntil: string | null = null) => {
@@ -117,15 +172,21 @@ const saveEvent = async (payload: CalendarEventRequest, id?: number) => {
     await workouts.loadDaySessions(payload.eventDate);
     eventOpen.value = false;
     selectedEvent.value = null;
+    clearEventFormErrors();
     feedback.value = id ? 'Evento modificato.' : 'Evento creato.';
     error.value = '';
+    return true;
   } catch (err) {
-    error.value = getErrorMessage(err);
+    eventFormError.value = getErrorMessage(err);
+    eventFormFieldErrors.value = extractFieldErrors(err);
+    error.value = '';
+    return false;
   }
 };
 
 const saveWorkoutEvent = async (payload: CalendarEventRequest) => {
-  await saveEvent({ ...payload, type: 'WORKOUT', color: payload.color || '#16a34a' });
+  const saved = await saveEvent({ ...payload, type: 'WORKOUT', color: payload.color || '#16a34a' });
+  if (!saved) return;
   workoutOpen.value = false;
   feedback.value = 'Allenamento aggiunto alla giornata.';
 };
@@ -135,6 +196,7 @@ const deleteEvent = async (event: CalendarEventResponse) => {
     await planning.removeEvent(event.eventDate, event.id);
     await workouts.loadDaySessions(event.eventDate);
     selectedEvent.value = null;
+    clearEventFormErrors();
     feedback.value = 'Evento eliminato.';
     error.value = '';
   } catch (err) {
