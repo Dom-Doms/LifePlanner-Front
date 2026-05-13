@@ -11,11 +11,20 @@
   --app-accent: #2563eb;
   --app-accent-strong: #1d4ed8;
   --app-accent-soft: #dbeafe;
+  --app-primary-contrast: #ffffff;
+  --app-button-secondary-bg: var(--app-surface-soft);
+  --app-button-secondary-text: var(--app-text);
+  --app-icon-button-bg: var(--app-text);
+  --app-icon-button-text: #ffffff;
+  --app-bottom-nav-bg: rgba(var(--app-surface-rgb), 0.92);
+  --app-bottom-nav-active-bg: var(--app-surface-soft);
   --app-danger: #dc2626;
   --app-danger-soft: #fee2e2;
   --app-danger-surface: #fef2f2;
   --app-danger-border: #fecaca;
   --app-success: #16a34a;
+  --app-current-time: #ef4444;
+  --app-swatch-border: #ffffff;
   --app-shadow: 0 14px 40px rgba(23, 32, 51, 0.12);
   --app-card-shadow: 0 8px 28px rgba(23, 32, 51, 0.08);
   --app-modal-backdrop: rgba(23, 32, 51, 0.36);
@@ -35,14 +44,41 @@
   --app-accent: #3b82f6;
   --app-accent-strong: #93c5fd;
   --app-accent-soft: #1e3a8a;
+  --app-primary-contrast: #ffffff;
+  --app-button-secondary-bg: #1e293b;
+  --app-button-secondary-text: #e2e8f0;
+  --app-icon-button-bg: #1f2937;
+  --app-icon-button-text: #f8fafc;
+  --app-bottom-nav-bg: rgba(var(--app-surface-rgb), 0.94);
+  --app-bottom-nav-active-bg: #1e293b;
   --app-danger: #f87171;
   --app-danger-soft: #3f1d24;
   --app-danger-surface: #2b1218;
   --app-danger-border: #7f1d1d;
   --app-success: #4ade80;
+  --app-current-time: #f87171;
+  --app-swatch-border: #e2e8f0;
   --app-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
   --app-card-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
   --app-modal-backdrop: rgba(2, 6, 23, 0.68);
+}
+
+:root {
+  --color-bg: var(--app-bg);
+  --color-surface: var(--app-surface);
+  --color-surface-soft: var(--app-surface-soft);
+  --color-text: var(--app-text);
+  --color-text-muted: var(--app-muted);
+  --color-border: var(--app-border);
+  --color-primary: var(--app-accent);
+  --color-primary-contrast: var(--app-primary-contrast);
+  --color-danger: var(--app-danger);
+  --color-button-secondary-bg: var(--app-button-secondary-bg);
+  --color-button-secondary-text: var(--app-button-secondary-text);
+  --color-icon-button-bg: var(--app-icon-button-bg);
+  --color-icon-button-text: var(--app-icon-button-text);
+  --color-bottom-nav-bg: var(--app-bottom-nav-bg);
+  --color-bottom-nav-active-bg: var(--app-bottom-nav-active-bg);
 }
 
 * {
@@ -85,6 +121,12 @@ select {
   background: var(--app-surface);
   color: var(--app-text);
   min-width: 0;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--app-muted);
+  opacity: 0.82;
 }
 
 textarea {
@@ -211,7 +253,7 @@ textarea {
 .danger-btn,
 .icon-btn,
 .context-chip {
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 14px;
   min-height: 44px;
   padding: 10px 14px;
@@ -238,30 +280,34 @@ textarea {
 
 .primary-btn {
   background: var(--app-accent);
-  color: #ffffff;
+  color: var(--app-primary-contrast);
+  border-color: var(--app-accent);
 }
 
 .secondary-btn,
 .context-chip {
-  background: var(--app-surface-soft);
-  color: var(--app-text);
+  background: var(--app-button-secondary-bg);
+  color: var(--app-button-secondary-text);
+  border-color: var(--app-border);
 }
 
 .danger-btn {
   background: var(--app-danger-soft);
   color: var(--app-danger);
+  border-color: var(--app-danger-border);
 }
 
 .icon-btn {
   width: 44px;
   min-width: 44px;
-  background: var(--app-text);
-  color: #ffffff;
+  background: var(--app-icon-button-bg);
+  color: var(--app-icon-button-text);
+  border-color: var(--app-border);
 }
 
 .icon-btn--light {
-  background: var(--app-surface-soft);
-  color: var(--app-text);
+  background: var(--app-button-secondary-bg);
+  color: var(--app-button-secondary-text);
 }
 
 .day-context {
@@ -438,7 +484,7 @@ textarea {
   border: 1px solid var(--app-danger-border);
   border-radius: 999px;
   background: var(--app-danger-surface);
-  color: #ef4444;
+  color: var(--app-current-time);
   font-size: 12px;
   font-weight: 800;
 }
@@ -513,7 +559,7 @@ textarea {
   left: 64px;
   right: 0;
   height: 2px;
-  background: #ef4444;
+  background: var(--app-current-time);
   z-index: 20;
   pointer-events: none;
 }
@@ -525,7 +571,7 @@ textarea {
   width: 10px;
   height: 10px;
   border-radius: 9999px;
-  background: #ef4444;
+  background: var(--app-current-time);
   transform: translate(-50%, -50%);
 }
 
@@ -536,7 +582,7 @@ textarea {
   transform: translateY(-50%);
   font-size: 12px;
   font-weight: 800;
-  color: #ef4444;
+  color: var(--app-current-time);
   background: var(--app-surface);
   padding: 2px 6px;
   border: 1px solid var(--app-danger-border);
@@ -840,7 +886,7 @@ textarea {
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   padding: 10px 12px max(12px, env(safe-area-inset-bottom));
-  background: rgba(var(--app-surface-rgb), 0.92);
+  background: var(--app-bottom-nav-bg);
   border-top: 1px solid var(--app-border);
   backdrop-filter: blur(16px);
   z-index: 50;
@@ -854,11 +900,12 @@ textarea {
   place-items: center;
   gap: 2px;
   color: var(--app-muted);
+  background: transparent;
   font-size: 12px;
 }
 
 .bottom-nav__item.router-link-active {
-  background: var(--app-surface-soft);
+  background: var(--app-bottom-nav-active-bg);
   color: var(--app-accent-strong);
 }
 
@@ -866,11 +913,12 @@ textarea {
   width: 22px;
   height: 22px;
   border-radius: 8px;
-  background: currentColor;
-  color: #ffffff;
+  background: transparent;
+  color: currentColor;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .modal-backdrop {
@@ -1033,7 +1081,7 @@ textarea {
 .color-picker__swatch {
   width: 34px;
   height: 34px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--app-swatch-border);
   border-radius: 999px;
   box-shadow: 0 0 0 1px var(--app-border);
   cursor: pointer;
