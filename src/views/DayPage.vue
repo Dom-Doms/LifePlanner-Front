@@ -2,7 +2,7 @@
   <AppLayout>
     <section class="page-header">
       <div>
-        <h1>La tua giornata <span v-if="plan?.context">- {{ plan.context.label }}</span></h1>
+        <h1>La tua giornata</h1>
         <p>{{ formatDate(date) }}</p>
       </div>
       <RouterLink to="/profile" class="icon-btn">P</RouterLink>
@@ -16,8 +16,8 @@
     />
 
     <section class="quick-actions">
-      <button class="primary-btn" type="button" @click="eventOpen = true">Aggiungi evento</button>
-      <button class="secondary-btn" type="button" @click="workoutOpen = true">Aggiungi allenamento</button>
+      <button class="primary-btn" type="button" @click="eventOpen = true">+ Evento</button>
+      <button class="secondary-btn" type="button" @click="workoutOpen = true">+ Allenamento</button>
     </section>
 
     <p v-if="feedback" class="success-text">{{ feedback }}</p>
@@ -101,8 +101,14 @@ const changeContext = async (contextId: number | null, recurrenceType: Recurrenc
 };
 
 const createContext = async (payload: DayContextRequest) => {
-  await planning.saveContext(payload);
-  feedback.value = 'Contesto salvato.';
+  try {
+    const saved = await planning.saveContext(payload);
+    await changeContext(saved.id);
+    feedback.value = 'Contesto salvato e applicato.';
+    error.value = '';
+  } catch (err) {
+    error.value = getErrorMessage(err);
+  }
 };
 
 const saveEvent = async (payload: CalendarEventRequest, id?: number) => {
