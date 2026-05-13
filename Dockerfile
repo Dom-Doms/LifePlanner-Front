@@ -1,7 +1,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-ARG VITE_API_BASE_URL
+ARG VITE_API_BASE_URL=https://api-lifeplanner.gesu.gay/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 COPY package*.json ./

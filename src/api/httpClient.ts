@@ -5,7 +5,10 @@ export interface AuthenticatedRequestConfig extends AxiosRequestConfig {
   skipAuth?: boolean;
 }
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
+const productionBaseUrl = 'https://api-lifeplanner.gesu.gay/api';
+const rawBaseUrl = import.meta.env.PROD
+  ? productionBaseUrl
+  : import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 const sanitizedBaseUrl = rawBaseUrl.replace(/\/+$/, '');
 
 export const httpClient = axios.create({
