@@ -8,11 +8,12 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-192x192.png', 'icons/icon-512x512.png', 'icons/maskable-icon-512x512.png'],
+      includeAssets: ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
       manifest: {
         name: 'LifePlanner',
         short_name: 'LifePlanner',
         description: 'Agenda personale per giornate, calendario, studio e allenamenti',
+        id: '/',
         lang: 'it-IT',
         theme_color: '#2563eb',
         background_color: '#f4f7fb',
@@ -22,41 +23,61 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: '/icons/icon-192x192.png',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/icons/icon-512x512.png',
+            src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/icons/maskable-icon-512x512.png',
+            src: '/pwa-maskable-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable',
+            purpose: 'any maskable',
           },
         ],
       },
       workbox: {
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.origin === 'https://api-lifeplanner.gesu.gay' && url.pathname.startsWith('/api'),
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') || url.origin === 'https://api-lifeplanner.gesu.gay',
             handler: 'NetworkOnly',
             method: 'GET',
           },
           {
-            urlPattern: ({ request }) => request.destination === 'image' || request.destination === 'font',
-            handler: 'CacheFirst',
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') || url.origin === 'https://api-lifeplanner.gesu.gay',
+            handler: 'NetworkOnly',
+            method: 'POST',
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') || url.origin === 'https://api-lifeplanner.gesu.gay',
+            handler: 'NetworkOnly',
+            method: 'PUT',
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') || url.origin === 'https://api-lifeplanner.gesu.gay',
+            handler: 'NetworkOnly',
+            method: 'PATCH',
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') || url.origin === 'https://api-lifeplanner.gesu.gay',
+            handler: 'NetworkOnly',
+            method: 'DELETE',
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
             options: {
-              cacheName: 'lifeplanner-static-assets',
-              expiration: {
-                maxEntries: 64,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
+              cacheName: 'lifeplanner-pages',
+              networkTimeoutSeconds: 3,
             },
           },
         ],
