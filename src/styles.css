@@ -362,6 +362,17 @@ textarea {
   padding-left: 0;
 }
 
+.timeline-empty-state {
+  margin: 2px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  background: #f8fafc;
+  color: var(--app-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .timeline-grid {
   position: absolute;
   inset: 0;

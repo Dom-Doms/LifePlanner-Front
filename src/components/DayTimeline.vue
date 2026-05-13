@@ -10,6 +10,7 @@
         <small>Tutto il giorno</small>
       </button>
     </div>
+    <p v-if="!events.length" class="timeline-empty-state">Nessun evento per questa giornata.</p>
     <div class="timeline timeline--day-grid" :style="{ minHeight: `${timelineHeight}px` }">
       <div class="timeline-grid" aria-hidden="true">
         <div v-for="hour in hours" :key="hour" class="timeline-hour">
@@ -40,7 +41,6 @@
           <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
         </button>
       </article>
-      <p v-if="!events.length" class="empty-state">Nessun evento per questa giornata.</p>
     </div>
   </section>
 </template>
