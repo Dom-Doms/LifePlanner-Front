@@ -348,6 +348,31 @@ textarea {
   gap: 12px;
 }
 
+.timeline-panel__header {
+  align-items: center;
+}
+
+.timeline-panel__meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.timeline-mode-toggle {
+  min-height: 34px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--app-surface-soft);
+  color: var(--app-accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .timeline-item {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
@@ -360,6 +385,7 @@ textarea {
   position: relative;
   overflow: visible;
   padding-left: 0;
+  gap: 0;
 }
 
 .timeline-empty-state {
@@ -373,6 +399,18 @@ textarea {
   line-height: 1.4;
 }
 
+.timeline-now-chip {
+  justify-self: start;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .timeline-grid {
   position: absolute;
   inset: 0;
@@ -380,33 +418,46 @@ textarea {
   pointer-events: none;
 }
 
-.timeline-hour {
-  position: relative;
+.timeline-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
   height: 48px;
-  border-top: 1px solid var(--app-border);
+  min-width: 0;
 }
 
-.timeline-hour span {
-  position: absolute;
-  left: 0;
-  top: -8px;
-  width: 52px;
-  color: var(--app-muted);
-  font-size: 11px;
+.timeline-hour-label {
+  color: #475569;
+  font-size: 12px;
   font-weight: 800;
+  line-height: 1;
   background: var(--app-surface);
+  padding-top: 0;
+}
+
+.timeline-line-area {
+  position: relative;
+  border-top: 1px solid var(--app-border);
 }
 
 .timeline-item--positioned {
   position: absolute;
-  left: 0;
+  left: 64px;
   right: 0;
   z-index: 10;
+  grid-template-columns: 0 minmax(0, 1fr);
+  gap: 0;
+}
+
+.timeline-item--positioned time {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
 }
 
 .current-time-line {
   position: absolute;
-  left: 0;
+  left: 64px;
   right: 0;
   height: 2px;
   background: #ef4444;
@@ -416,7 +467,7 @@ textarea {
 
 .current-time-dot {
   position: absolute;
-  left: 52px;
+  left: 0;
   top: 50%;
   width: 10px;
   height: 10px;
@@ -427,7 +478,7 @@ textarea {
 
 .current-time-label {
   position: absolute;
-  left: 66px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
