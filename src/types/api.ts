@@ -79,10 +79,13 @@ export interface CalendarEventResponse {
   workoutTemplateId?: number | null;
   recurrenceType?: RecurrenceType | null;
   recurrenceUntil?: string | null;
+  reminderEnabled: boolean;
+  reminderMinutesBefore?: number | null;
+  reminderSentAt?: string | null;
   participants: ParticipantDto[];
 }
 
-export type CalendarEventRequest = Omit<CalendarEventResponse, 'id'>;
+export type CalendarEventRequest = Omit<CalendarEventResponse, 'id' | 'reminderSentAt'>;
 
 export interface WorkoutExerciseDto {
   id?: number | null;

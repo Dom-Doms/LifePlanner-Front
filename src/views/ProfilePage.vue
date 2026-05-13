@@ -9,12 +9,14 @@
       <p>Ruolo: {{ auth.user?.role }}</p>
       <button class="danger-btn" type="button" @click="logout">Logout</button>
     </section>
+    <PushNotificationsCard />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
+import PushNotificationsCard from '@/components/PushNotificationsCard.vue';
 import { useAuthStore } from '@/stores/authStore';
 
 const auth = useAuthStore();

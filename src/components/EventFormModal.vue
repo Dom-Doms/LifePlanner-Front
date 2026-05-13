@@ -47,6 +47,17 @@
         <input v-if="draft.recurrenceType !== 'NONE'" v-model="draft.recurrenceUntil" type="date" required />
       </div>
 
+      <label>
+        Promemoria
+        <select v-model.number="reminderOption">
+          <option :value="0">Nessuno</option>
+          <option :value="10">10 minuti prima</option>
+          <option :value="30">30 minuti prima</option>
+          <option :value="60">1 ora prima</option>
+          <option :value="1440">1 giorno prima</option>
+        </select>
+      </label>
+
       <section class="sub-panel">
         <strong>Partecipanti</strong>
         <div class="participant-search">
@@ -114,12 +125,15 @@ const draft = reactive<CalendarEventRequest>({
   workoutTemplateId: base?.workoutTemplateId ?? null,
   recurrenceType: base?.recurrenceType ?? 'NONE',
   recurrenceUntil: base?.recurrenceUntil ?? null,
+  reminderEnabled: base?.reminderEnabled ?? false,
+  reminderMinutesBefore: base?.reminderMinutesBefore ?? null,
   participants: [...(base?.participants ?? [])],
 });
 
 const userQuery = ref('');
 const userResults = ref<UserResponse[]>([]);
 const freeParticipantName = ref('');
+const reminderOption = ref(base?.reminderEnabled ? base.reminderMinutesBefore ?? 30 : 0);
 const error = ref('');
 let searchTimer: number | undefined;
 
@@ -169,6 +183,8 @@ const submit = () => {
       startTime: draft.allDay ? null : draft.startTime,
       endTime: draft.allDay ? null : draft.endTime,
       recurrenceUntil: draft.recurrenceType === 'NONE' ? null : draft.recurrenceUntil,
+      reminderEnabled: reminderOption.value > 0,
+      reminderMinutesBefore: reminderOption.value > 0 ? reminderOption.value : null,
       workoutTemplateId: showWorkoutTemplate.value ? draft.workoutTemplateId : null,
     },
     props.event?.id,

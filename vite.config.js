@@ -6,6 +6,9 @@ export default defineConfig({
     plugins: [
         vue(),
         VitePWA({
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'service-worker.ts',
             registerType: 'autoUpdate',
             includeAssets: ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
             manifest: {
@@ -38,6 +41,9 @@ export default defineConfig({
                         purpose: 'any maskable',
                     },
                 ],
+            },
+            injectManifest: {
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
             },
             workbox: {
                 navigateFallback: '/index.html',

@@ -144,6 +144,11 @@ textarea {
   padding-bottom: 0;
 }
 
+.card-actions--wrap {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
 .panel,
 .workout-card,
 .day-card,
@@ -185,6 +190,13 @@ textarea {
   justify-content: center;
   font-weight: 700;
   max-width: 100%;
+}
+
+.primary-btn:disabled,
+.secondary-btn:disabled,
+.danger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .primary-btn--full,
