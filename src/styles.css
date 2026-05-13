@@ -2,15 +2,47 @@
   color-scheme: light;
   --app-bg: #f6f7fb;
   --app-surface: #ffffff;
+  --app-surface-rgb: 255, 255, 255;
   --app-surface-soft: #eef2ff;
+  --app-surface-subtle: #f8fafc;
   --app-border: #d9deea;
   --app-text: #172033;
   --app-muted: #667085;
   --app-accent: #2563eb;
   --app-accent-strong: #1d4ed8;
+  --app-accent-soft: #dbeafe;
   --app-danger: #dc2626;
+  --app-danger-soft: #fee2e2;
+  --app-danger-surface: #fef2f2;
+  --app-danger-border: #fecaca;
+  --app-success: #16a34a;
   --app-shadow: 0 14px 40px rgba(23, 32, 51, 0.12);
+  --app-card-shadow: 0 8px 28px rgba(23, 32, 51, 0.08);
+  --app-modal-backdrop: rgba(23, 32, 51, 0.36);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --app-bg: #0b1120;
+  --app-surface: #111827;
+  --app-surface-rgb: 17, 24, 39;
+  --app-surface-soft: #1f2937;
+  --app-surface-subtle: #172033;
+  --app-border: #334155;
+  --app-text: #f8fafc;
+  --app-muted: #94a3b8;
+  --app-accent: #3b82f6;
+  --app-accent-strong: #93c5fd;
+  --app-accent-soft: #1e3a8a;
+  --app-danger: #f87171;
+  --app-danger-soft: #3f1d24;
+  --app-danger-surface: #2b1218;
+  --app-danger-border: #7f1d1d;
+  --app-success: #4ade80;
+  --app-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  --app-card-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  --app-modal-backdrop: rgba(2, 6, 23, 0.68);
 }
 
 * {
@@ -156,7 +188,7 @@ textarea {
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: 18px;
-  box-shadow: 0 8px 28px rgba(23, 32, 51, 0.08);
+  box-shadow: var(--app-card-shadow);
 }
 
 .panel {
@@ -216,7 +248,7 @@ textarea {
 }
 
 .danger-btn {
-  background: #fee2e2;
+  background: var(--app-danger-soft);
   color: var(--app-danger);
 }
 
@@ -253,7 +285,7 @@ textarea {
   border-radius: 18px;
   padding: 12px;
   background: var(--app-surface);
-  box-shadow: 0 8px 28px rgba(23, 32, 51, 0.08);
+  box-shadow: var(--app-card-shadow);
   color: inherit;
   display: flex;
   align-items: center;
@@ -313,7 +345,7 @@ textarea {
 
 .context-chip--active {
   outline: 2px solid var(--app-accent);
-  background: #dbeafe;
+  background: var(--app-accent-soft);
 }
 
 .inline-form,
@@ -393,7 +425,7 @@ textarea {
   padding: 12px 14px;
   border: 1px solid var(--app-border);
   border-radius: 14px;
-  background: #f8fafc;
+  background: var(--app-surface-subtle);
   color: var(--app-muted);
   font-size: 14px;
   line-height: 1.4;
@@ -403,9 +435,9 @@ textarea {
   justify-self: start;
   margin: 0;
   padding: 6px 10px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--app-danger-border);
   border-radius: 999px;
-  background: #fef2f2;
+  background: var(--app-danger-surface);
   color: #ef4444;
   font-size: 12px;
   font-weight: 800;
@@ -426,7 +458,7 @@ textarea {
 }
 
 .timeline-hour-label {
-  color: #475569;
+  color: var(--app-muted);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -437,6 +469,27 @@ textarea {
 .timeline-line-area {
   position: relative;
   border-top: 1px solid var(--app-border);
+}
+
+.timeline-events-layer {
+  position: absolute;
+  top: 0;
+  left: 64px;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.timeline-event {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.timeline-event-card {
+  height: 100%;
+  overflow: hidden;
 }
 
 .timeline-item--positioned {
@@ -486,7 +539,7 @@ textarea {
   color: #ef4444;
   background: var(--app-surface);
   padding: 2px 6px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--app-danger-border);
   border-radius: 999px;
 }
 
@@ -501,7 +554,7 @@ textarea {
 .event-card {
   padding: 12px;
   border-radius: 14px;
-  background: #f8fafc;
+  background: var(--app-surface-subtle);
   border: 1px solid var(--app-border);
   display: grid;
   gap: 4px;
@@ -562,7 +615,7 @@ textarea {
 
 .week-day-card--today {
   border-color: var(--app-accent);
-  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.14);
+  box-shadow: var(--app-card-shadow);
 }
 
 .week-day-card__date {
@@ -596,7 +649,7 @@ textarea {
 }
 
 .week-pill--today {
-  background: #dbeafe;
+  background: var(--app-accent-soft);
 }
 
 .week-day-card__meta {
@@ -608,7 +661,7 @@ textarea {
 .week-day-card__meta span {
   padding: 5px 8px;
   border-radius: 999px;
-  background: #f8fafc;
+  background: var(--app-surface-subtle);
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 800;
@@ -643,6 +696,29 @@ textarea {
 .week-more {
   color: var(--app-muted);
   font-weight: 800;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-option {
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  background: var(--app-surface-soft);
+  color: var(--app-text);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.theme-option--active {
+  border-color: var(--app-accent);
+  background: var(--app-accent-soft);
+  color: var(--app-accent-strong);
 }
 
 .calendar-grid {
@@ -688,7 +764,7 @@ textarea {
 }
 
 .gym-dot {
-  background: #16a34a;
+  background: var(--app-success);
 }
 
 .day-indicators,
@@ -764,7 +840,7 @@ textarea {
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   padding: 10px 12px max(12px, env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(var(--app-surface-rgb), 0.92);
   border-top: 1px solid var(--app-border);
   backdrop-filter: blur(16px);
   z-index: 50;
@@ -801,7 +877,7 @@ textarea {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(23, 32, 51, 0.36);
+  background: var(--app-modal-backdrop);
   display: grid;
   align-items: end;
   overflow: hidden;
@@ -828,7 +904,7 @@ textarea {
   padding: 0;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -18px 42px rgba(23, 32, 51, 0.18);
+  box-shadow: var(--app-shadow);
 }
 
 .event-modal__header {
@@ -884,9 +960,9 @@ textarea {
 .form-alert {
   margin: 0;
   padding: 10px 12px;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--app-danger-border);
   border-radius: 14px;
-  background: #fef2f2;
+  background: var(--app-danger-surface);
   color: var(--app-danger);
   font-weight: 800;
 }
@@ -916,7 +992,7 @@ textarea {
 }
 
 .day-context-modal {
-  box-shadow: 0 -18px 42px rgba(23, 32, 51, 0.18);
+  box-shadow: var(--app-shadow);
 }
 
 .context-list,

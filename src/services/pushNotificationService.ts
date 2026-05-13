@@ -91,10 +91,10 @@ export const sendTestNotification = async (payload: PushTestRequest = {}) => {
   await httpClient.post('/push/test', payload);
 };
 
-const getVapidPublicKey = async () => {
+export const getVapidPublicKey = async () => {
   const { data } = await httpClient.get<VapidPublicKeyResponse>('/push/vapid-public-key');
   if (!data.publicKey) {
-    throw new Error('Chiave VAPID pubblica non configurata sul backend.');
+    throw new Error('Le notifiche push non sono ancora configurate sul server.');
   }
   return data.publicKey;
 };

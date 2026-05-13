@@ -16,7 +16,7 @@
       <button class="primary-btn" type="button" :disabled="!canEnable || loading" @click="enable">
         Attiva notifiche
       </button>
-      <button class="secondary-btn" type="button" :disabled="!supported || loading" @click="disable">
+      <button class="secondary-btn" type="button" :disabled="!supported || !subscribed || loading" @click="disable">
         Disattiva notifiche
       </button>
       <button class="secondary-btn" type="button" :disabled="!canSendTest || loading" @click="sendTest">
@@ -31,6 +31,7 @@ import { computed, onMounted, ref } from 'vue';
 import {
   getExistingSubscription,
   getNotificationPermission,
+  getVapidPublicKey,
   isPushSupported,
   sendTestNotification,
   subscribeToPushNotifications,
@@ -41,13 +42,14 @@ import { getErrorMessage } from '@/utils/errorMessage';
 const supported = ref(false);
 const permission = ref<NotificationPermission | 'unsupported'>('default');
 const subscribed = ref(false);
+const vapidConfigured = ref(false);
 const loading = ref(false);
 const feedback = ref('');
 const error = ref('');
 
 const isIos = computed(() => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-const canEnable = computed(() => supported.value && permission.value !== 'denied');
-const canSendTest = computed(() => supported.value && permission.value === 'granted' && subscribed.value);
+const canEnable = computed(() => supported.value && vapidConfigured.value && permission.value !== 'denied');
+const canSendTest = computed(() => supported.value && vapidConfigured.value && permission.value === 'granted' && subscribed.value);
 
 const statusLabel = computed(() => {
   if (!supported.value) return 'Non supportate';
@@ -58,8 +60,13 @@ const statusLabel = computed(() => {
 
 const helperText = computed(() => {
   if (!supported.value) return 'Questo browser non supporta Web Push per la PWA.';
+  if (!vapidConfigured.value) return 'Le notifiche push non sono ancora configurate sul server.';
   if (permission.value === 'denied') return 'Le notifiche sono bloccate: riattivale dalle impostazioni del browser.';
-  if (permission.value === 'granted') return subscribed.value ? 'Le notifiche push sono attive per questo dispositivo.' : 'Permesso concesso, subscription non ancora attiva.';
+  if (permission.value === 'granted') {
+    return subscribed.value
+      ? 'Le notifiche push sono attive per questo dispositivo.'
+      : 'Permesso concesso: puoi attivare la subscription push per questo dispositivo.';
+  }
   return 'Ricevi promemoria anche quando la PWA non e aperta, dove supportato.';
 });
 
@@ -67,6 +74,16 @@ const refresh = async () => {
   supported.value = isPushSupported();
   permission.value = getNotificationPermission();
   subscribed.value = Boolean(await getExistingSubscription());
+  if (!supported.value) {
+    vapidConfigured.value = false;
+    return;
+  }
+  try {
+    await getVapidPublicKey();
+    vapidConfigured.value = true;
+  } catch {
+    vapidConfigured.value = false;
+  }
 };
 
 const enable = async () => {

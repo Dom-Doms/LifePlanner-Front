@@ -29,8 +29,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title ?? 'LifePlanner', {
       body: payload.body ?? '',
-      icon: payload.icon ?? '/pwa-192x192.png',
-      badge: payload.badge ?? '/pwa-192x192.png',
+      icon: payload.icon ?? '/icons/pwa-192x192.png',
+      badge: payload.badge ?? '/icons/pwa-192x192.png',
       tag: payload.tag,
       data: { url: targetUrl },
     }),

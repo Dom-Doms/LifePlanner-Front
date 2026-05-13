@@ -10,7 +10,7 @@ export default defineConfig({
             srcDir: 'src',
             filename: 'service-worker.ts',
             registerType: 'autoUpdate',
-            includeAssets: ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
+            includeAssets: ['apple-touch-icon.png', 'icons/pwa-192x192.png', 'icons/pwa-512x512.png', 'icons/maskable-icon-512x512.png'],
             manifest: {
                 name: 'LifePlanner',
                 short_name: 'LifePlanner',
@@ -25,17 +25,17 @@ export default defineConfig({
                 scope: '/',
                 icons: [
                     {
-                        src: '/pwa-192x192.png',
+                        src: '/icons/pwa-192x192.png',
                         sizes: '192x192',
                         type: 'image/png',
                     },
                     {
-                        src: '/pwa-512x512.png',
+                        src: '/icons/pwa-512x512.png',
                         sizes: '512x512',
                         type: 'image/png',
                     },
                     {
-                        src: '/pwa-maskable-512x512.png',
+                        src: '/icons/maskable-icon-512x512.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'any maskable',

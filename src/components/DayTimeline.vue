@@ -35,20 +35,26 @@
         <span class="current-time-label">{{ currentTimeLabel }}</span>
       </div>
 
-      <article
-        v-for="event in timedEventBlocks"
-        :key="event.id"
-        class="timeline-item timeline-item--positioned"
-        :style="{ top: `${event.top}px`, minHeight: `${event.height}px` }"
-      >
-        <time>{{ event.startTime?.slice(0, 5) }}<span>{{ event.endTime?.slice(0, 5) }}</span></time>
-        <button class="event-card event-card--button" type="button" @click="$emit('select', event)">
-          <strong>{{ event.title }}</strong>
-          <small class="timeline-event-time">{{ event.startTime?.slice(0, 5) }}<span v-if="event.endTime"> - {{ event.endTime.slice(0, 5) }}</span></small>
-          <small>{{ labelFor(event.type) }}<span v-if="event.location"> - {{ event.location }}</span></small>
-          <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
-        </button>
-      </article>
+      <div class="timeline-events-layer">
+        <article
+          v-for="event in timedEventBlocks"
+          :key="event.id"
+          class="timeline-event"
+          :style="{
+            top: `${event.top}px`,
+            minHeight: `${event.height}px`,
+            left: `${event.leftPercent}%`,
+            width: `calc(${event.widthPercent}% - 4px)`,
+          }"
+        >
+          <button class="event-card event-card--button timeline-event-card" type="button" @click="$emit('select', event)">
+            <strong>{{ event.title }}</strong>
+            <small class="timeline-event-time">{{ event.startTime?.slice(0, 5) }}<span v-if="event.endTime"> - {{ event.endTime.slice(0, 5) }}</span></small>
+            <small>{{ labelFor(event.type) }}<span v-if="event.location"> - {{ event.location }}</span></small>
+            <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
+          </button>
+        </article>
+      </div>
     </div>
   </section>
 </template>
@@ -98,19 +104,7 @@ const showCurrentTimeChip = computed(() => {
 const currentTimeLabel = computed(() =>
   `${String(now.value.getHours()).padStart(2, '0')}:${String(now.value.getMinutes()).padStart(2, '0')}`,
 );
-const timedEventBlocks = computed(() =>
-  timedEvents.value.map((event) => {
-    const start = timeToMinutes(event.startTime) ?? visibleStartMinutes.value;
-    const end = timeToMinutes(event.endTime) ?? start + 45;
-    const clampedStart = Math.max(start, visibleStartMinutes.value);
-    const clampedEnd = Math.min(Math.max(end, clampedStart + 30), visibleEndMinutes.value);
-    return {
-      ...event,
-      top: (clampedStart - visibleStartMinutes.value) * pixelsPerMinute,
-      height: Math.max((clampedEnd - clampedStart) * pixelsPerMinute, 44),
-    };
-  }),
-);
+const timedEventBlocks = computed(() => layoutTimedEvents(timedEvents.value));
 
 function readTimelineMode(): TimelineMode {
   if (typeof window === 'undefined') return defaultTimelineMode;
@@ -156,6 +150,55 @@ const ensureMinimumHours = (startHour: number, endHour: number) => {
 };
 
 const clampHour = (hour: number) => Math.min(Math.max(hour, 0), 24);
+
+const layoutTimedEvents = (events: CalendarEventResponse[]) => {
+  const normalized = events
+    .map((event) => {
+      const start = timeToMinutes(event.startTime) ?? visibleStartMinutes.value;
+      const rawEnd = timeToMinutes(event.endTime) ?? start + minutesPerHour;
+      const end = Math.max(rawEnd, start + minutesPerHour);
+      const clampedStart = Math.max(start, visibleStartMinutes.value);
+      const clampedEnd = Math.min(Math.max(end, clampedStart + 30), visibleEndMinutes.value);
+      return { event, start, end, clampedStart, clampedEnd };
+    })
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const groups: typeof normalized[] = [];
+  let currentGroup: typeof normalized = [];
+  let currentGroupEnd = -1;
+
+  normalized.forEach((item) => {
+    if (!currentGroup.length || item.start < currentGroupEnd) {
+      currentGroup.push(item);
+      currentGroupEnd = Math.max(currentGroupEnd, item.end);
+      return;
+    }
+    groups.push(currentGroup);
+    currentGroup = [item];
+    currentGroupEnd = item.end;
+  });
+  if (currentGroup.length) groups.push(currentGroup);
+
+  return groups.flatMap((group) => {
+    const columns: number[] = [];
+    const positioned = group.map((item) => {
+      const columnIndex = columns.findIndex((end) => end <= item.start);
+      const nextColumnIndex = columnIndex === -1 ? columns.length : columnIndex;
+      columns[nextColumnIndex] = item.end;
+      return { ...item, columnIndex: nextColumnIndex };
+    });
+    const columnCount = Math.max(columns.length, 1);
+    return positioned.map((item) => ({
+      ...item.event,
+      top: (item.clampedStart - visibleStartMinutes.value) * pixelsPerMinute,
+      height: Math.max((item.clampedEnd - item.clampedStart) * pixelsPerMinute, 44),
+      columnIndex: item.columnIndex,
+      columnCount,
+      widthPercent: 100 / columnCount,
+      leftPercent: (item.columnIndex * 100) / columnCount,
+    }));
+  });
+};
 
 const localIsoDate = (date: Date) => {
   const year = date.getFullYear();
