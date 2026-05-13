@@ -460,10 +460,24 @@ textarea {
   display: flex;
   gap: 8px;
   align-items: center;
+  min-width: 0;
 }
 
 .modal-actions {
   justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.participant-search {
+  flex-wrap: wrap;
+}
+
+.participant-search input {
+  flex: 1 1 220px;
+}
+
+.participant-search .secondary-btn {
+  flex: 0 1 auto;
 }
 
 .sub-panel {

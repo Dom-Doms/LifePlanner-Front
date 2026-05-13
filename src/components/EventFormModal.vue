@@ -64,9 +64,11 @@
           <input v-model.trim="userQuery" placeholder="Cerca utente registrato" @input="runUserSearch" />
           <button class="secondary-btn" type="button" @click="addFreeParticipant">Aggiungi libero</button>
         </div>
+        <p v-if="searchError" class="error-text">{{ searchError }}</p>
+        <p v-else-if="showNoResults" class="empty-state">Nessun utente trovato.</p>
         <div v-if="userResults.length" class="search-results">
           <button v-for="user in userResults" :key="user.id" type="button" @click="addUserParticipant(user)">
-            {{ user.username }} <small>{{ user.email }}</small>
+            {{ user.displayName ?? user.username }} <small>{{ user.email }}</small>
           </button>
         </div>
         <input v-model.trim="freeParticipantName" placeholder="Nome libero opzionale" />
@@ -134,30 +136,43 @@ const userQuery = ref('');
 const userResults = ref<UserResponse[]>([]);
 const freeParticipantName = ref('');
 const reminderOption = ref(base?.reminderEnabled ? base.reminderMinutesBefore ?? 30 : 0);
+const searchError = ref('');
+const searchDone = ref(false);
 const error = ref('');
 let searchTimer: number | undefined;
 
 const showWorkoutTemplate = computed(() => props.workoutMode && !props.event);
 const linkedWorkoutLabel = computed(() => (draft.workoutSessionId ? `Allenamento collegato: sessione #${draft.workoutSessionId}` : ''));
+const showNoResults = computed(() => userQuery.value.length >= 2 && searchDone.value && !userResults.value.length && !searchError.value);
 
 const runUserSearch = () => {
   window.clearTimeout(searchTimer);
+  searchError.value = '';
+  searchDone.value = false;
   if (userQuery.value.length < 2) {
     userResults.value = [];
     return;
   }
   searchTimer = window.setTimeout(async () => {
-    userResults.value = await searchUsers(userQuery.value);
-  }, 250);
+    try {
+      userResults.value = await searchUsers(userQuery.value);
+    } catch {
+      userResults.value = [];
+      searchError.value = 'Ricerca utenti non disponibile.';
+    } finally {
+      searchDone.value = true;
+    }
+  }, 300);
 };
 
-const participantKey = (participant: ParticipantDto) => `${participant.participantType}-${participant.userId ?? participant.displayName}`;
+const participantKey = (participant: ParticipantDto) => `${participant.participantType}-${participant.registeredUserId ?? participant.displayName}`;
 
 const addUserParticipant = (user: UserResponse) => {
-  if (draft.participants.some((participant) => participant.userId === user.id)) return;
-  draft.participants.push({ userId: user.id, displayName: user.username, participantType: 'REGISTERED_USER' });
+  if (draft.participants.some((participant) => participant.registeredUserId === user.id)) return;
+  draft.participants.push({ registeredUserId: user.id, displayName: user.displayName ?? user.username, participantType: 'REGISTERED_USER' });
   userQuery.value = '';
   userResults.value = [];
+  searchDone.value = false;
 };
 
 const addFreeParticipant = () => {

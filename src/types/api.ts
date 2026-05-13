@@ -6,6 +6,7 @@ export type ParticipantType = 'REGISTERED_USER' | 'FREE_TEXT';
 export interface UserResponse {
   id: number;
   username: string;
+  displayName?: string | null;
   email: string;
   role: UserRole;
   createdAt: string;
@@ -59,7 +60,7 @@ export interface DailyPlanRequest {
 
 export interface ParticipantDto {
   id?: number | null;
-  userId?: number | null;
+  registeredUserId?: number | null;
   displayName: string;
   participantType: ParticipantType;
 }
