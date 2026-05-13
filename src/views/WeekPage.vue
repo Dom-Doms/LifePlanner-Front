@@ -5,7 +5,7 @@
       <p>{{ formatShortDate(firstDay) }} - {{ formatShortDate(lastDay) }}</p>
     </section>
     <section class="day-list">
-      <RouterLink v-for="day in days" :key="day" class="day-card" :to="`/day/${day}`">
+      <RouterLink v-for="day in days" :key="day" class="day-card" :style="contextStyle(day)" :to="`/day/${day}`">
         <div class="day-card__top">
           <strong>{{ formatShortDate(day) }}</strong>
           <span v-if="planByDate(day)?.context">{{ planByDate(day)?.context?.label }}</span>
@@ -36,7 +36,12 @@ const lastDay = computed(() => days.value[6] ?? toIsoDate(addDays(weekStart, 6))
 
 const planByDate = (date: string) => planning.weekPlans.find((plan) => plan.date === date);
 const eventsByDate = (date: string) => planning.events.filter((event) => event.eventDate === date);
-const workoutsByDate = (date: string) => workouts.sessions.filter((session) => session.date === date);
+const workoutsByDate = (date: string) =>
+  planning.events.filter((event) => event.eventDate === date && (event.type === 'GYM' || event.type === 'WORKOUT'));
+const contextStyle = (date: string) => {
+  const color = planByDate(date)?.context?.color;
+  return color ? { '--context-color': color } : {};
+};
 
 onMounted(async () => {
   await Promise.all([

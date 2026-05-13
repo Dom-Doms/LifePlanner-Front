@@ -9,11 +9,20 @@
       <button class="icon-btn" type="button" @click="moveMonth(1)">&gt;</button>
     </section>
     <section class="calendar-grid">
-      <RouterLink v-for="day in monthDays" :key="day" class="calendar-day" :to="`/day/${day}`">
+      <RouterLink
+        v-for="day in monthDays"
+        :key="day"
+        class="calendar-day"
+        :class="{ 'calendar-day--context': !!planByDate(day)?.context }"
+        :style="contextStyle(day)"
+        :to="`/day/${day}`"
+      >
         <strong>{{ Number(day.slice(-2)) }}</strong>
         <small v-if="planByDate(day)?.context">{{ planByDate(day)?.context?.label }}</small>
-        <span v-if="eventsByDate(day).length" class="dot"></span>
-        <span v-if="workoutsByDate(day).length" class="gym-dot"></span>
+        <span class="day-indicators">
+          <span v-if="eventsByDate(day).length" class="dot"></span>
+          <span v-if="workoutsByDate(day).length" class="gym-dot"></span>
+        </span>
       </RouterLink>
     </section>
   </AppLayout>
@@ -41,7 +50,13 @@ const monthDays = computed(() =>
 
 const planByDate = (date: string) => planning.monthPlans.find((plan) => plan.date === date);
 const eventsByDate = (date: string) => planning.events.filter((event) => event.eventDate === date);
-const workoutsByDate = (date: string) => workouts.sessions.filter((session) => session.date === date);
+const workoutsByDate = (date: string) =>
+  planning.events.filter((event) => event.eventDate === date && (event.type === 'GYM' || event.type === 'WORKOUT'));
+
+const contextStyle = (date: string) => {
+  const color = planByDate(date)?.context?.color;
+  return color ? { '--context-color': color } : {};
+};
 
 const load = async () => {
   await Promise.all([

@@ -20,6 +20,7 @@ import type {
   DailyPlanResponse,
   DayContextRequest,
   DayContextResponse,
+  RecurrenceType,
 } from '@/types/api';
 
 export const usePlanningStore = defineStore('planning', () => {
@@ -63,8 +64,18 @@ export const usePlanningStore = defineStore('planning', () => {
     }
   };
 
-  const setDayContext = async (date: string, contextId: number | null) => {
-    currentPlan.value = await updateDailyPlan(date, { contextId, notes: currentPlan.value?.notes ?? null });
+  const setDayContext = async (
+    date: string,
+    contextId: number | null,
+    recurrenceType: RecurrenceType = 'NONE',
+    recurrenceUntil: string | null = null,
+  ) => {
+    currentPlan.value = await updateDailyPlan(date, {
+      contextId,
+      notes: currentPlan.value?.notes ?? null,
+      recurrenceType,
+      recurrenceUntil,
+    });
   };
 
   const saveEvent = async (payload: CalendarEventRequest, id?: number) => {

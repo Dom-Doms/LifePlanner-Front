@@ -258,6 +258,14 @@ textarea {
   min-width: 0;
 }
 
+.event-card--button {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
 .event-card strong,
 .workout-card h3,
 .day-card strong {
@@ -287,16 +295,26 @@ textarea {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 
 .calendar-day {
-  min-height: 74px;
-  padding: 8px;
+  min-height: 92px;
+  padding: 10px 8px;
   display: grid;
   align-content: start;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-day--context,
+.day-card[style*="--context-color"] {
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--context-color) 18%, transparent), color-mix(in srgb, var(--context-color) 18%, transparent)),
+    var(--app-surface);
+  border-color: color-mix(in srgb, var(--context-color) 42%, var(--app-border));
 }
 
 .calendar-day small {
@@ -318,6 +336,55 @@ textarea {
 
 .gym-dot {
   background: #16a34a;
+}
+
+.day-indicators,
+.modal-actions,
+.participant-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.modal-actions {
+  justify-content: space-between;
+}
+
+.sub-panel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  background: var(--app-surface-soft);
+}
+
+.search-results {
+  display: grid;
+  gap: 6px;
+}
+
+.search-results button {
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  text-align: left;
+}
+
+.search-results small {
+  color: var(--app-muted);
+}
+
+.chips--wrap {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.success-text {
+  color: var(--app-accent-strong);
+  margin: 0;
 }
 
 .bottom-nav {

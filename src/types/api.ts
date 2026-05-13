@@ -1,5 +1,6 @@
 export type UserRole = 'ADMIN' | 'USER';
-export type EventType = 'STUDY' | 'EXAM' | 'PERSONAL' | 'GYM' | 'OTHER';
+export type EventType = 'STUDY' | 'EXAM' | 'PERSONAL' | 'GYM' | 'WORKOUT' | 'OTHER';
+export type RecurrenceType = 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
 export type ParticipantType = 'REGISTERED_USER' | 'FREE_TEXT';
 
 export interface UserResponse {
@@ -52,6 +53,8 @@ export interface DailyPlanResponse {
 export interface DailyPlanRequest {
   contextId?: number | null;
   notes?: string | null;
+  recurrenceType?: RecurrenceType | null;
+  recurrenceUntil?: string | null;
 }
 
 export interface ParticipantDto {
@@ -73,6 +76,9 @@ export interface CalendarEventResponse {
   location?: string | null;
   color?: string | null;
   workoutSessionId?: number | null;
+  workoutTemplateId?: number | null;
+  recurrenceType?: RecurrenceType | null;
+  recurrenceUntil?: string | null;
   participants: ParticipantDto[];
 }
 
@@ -94,6 +100,7 @@ export interface WorkoutTemplateResponse {
   id: number;
   name: string;
   description?: string | null;
+  active: boolean;
   exercises: WorkoutExerciseDto[];
 }
 
