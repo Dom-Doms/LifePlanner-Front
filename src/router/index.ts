@@ -8,6 +8,8 @@ const router = createRouter({
     { path: '/', redirect: () => `/day/${todayIso()}` },
     { path: '/login', name: 'login', component: () => import('@/views/LoginPage.vue'), meta: { public: true } },
     { path: '/register', name: 'register', component: () => import('@/views/RegisterPage.vue'), meta: { public: true } },
+    { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPasswordPage.vue'), meta: { public: true } },
+    { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPasswordPage.vue'), meta: { public: true } },
     { path: '/day', redirect: () => `/day/${todayIso()}` },
     { path: '/day/:date', name: 'day', component: () => import('@/views/DayPage.vue') },
     { path: '/week', name: 'week', component: () => import('@/views/WeekPage.vue') },
@@ -24,7 +26,7 @@ router.beforeEach((to) => {
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } };
   }
-  if (to.meta.public && auth.isAuthenticated) {
+  if ((to.name === 'login' || to.name === 'register') && auth.isAuthenticated) {
     return `/day/${todayIso()}`;
   }
   return true;

@@ -7,6 +7,7 @@
       <input v-model="password" type="password" required placeholder="Password" />
       <p v-if="error" class="error-text">{{ error }}</p>
       <button class="primary-btn" type="submit" :disabled="auth.loading">Accedi</button>
+      <RouterLink to="/forgot-password">Password dimenticata?</RouterLink>
       <RouterLink to="/register">Crea account</RouterLink>
     </form>
   </main>
