@@ -1,30 +1,33 @@
 <template>
   <section class="panel notification-card">
-    <div class="panel__header">
-      <div>
+    <div class="panel__header notification-card__header">
+      <div class="notification-card__heading">
         <h2>Notifiche</h2>
-        <p>{{ statusLabel }}</p>
       </div>
+      <span class="notification-status-badge" :class="statusBadgeClass">{{ statusBadgeLabel }}</span>
     </div>
 
-    <p class="empty-state">{{ helperText }}</p>
-    <p v-if="isIos" class="empty-state">Su iPhone le notifiche funzionano solo se l'app e aggiunta alla schermata Home.</p>
-    <p v-if="feedback" class="success-text">{{ feedback }}</p>
-    <p v-if="error" class="error-text">{{ error }}</p>
+    <p class="notification-card__description">{{ helperText }}</p>
 
-    <div class="card-actions card-actions--wrap">
-      <button class="primary-btn" type="button" :disabled="!canEnable || loading" @click="enable">
+    <p v-if="alertMessage" class="notification-alert" :class="alertClass" role="status">
+      {{ alertMessage }}
+    </p>
+
+    <div class="notification-actions" aria-label="Azioni notifiche">
+      <button v-if="canEnable" class="primary-btn notification-actions__primary" type="button" :disabled="loading" @click="enable">
         Attiva notifiche
       </button>
-      <button class="secondary-btn" type="button" :disabled="!supported || !subscribed || loading" @click="disable">
-        Disattiva notifiche
-      </button>
-      <button v-if="canRegenerate" class="secondary-btn" type="button" :disabled="loading || !vapidConfigured" @click="regenerate">
-        Rigenera notifiche
-      </button>
-      <button class="secondary-btn" type="button" :disabled="!canSendTest || loading" @click="sendTest">
-        Invia notifica di test
-      </button>
+      <div class="notification-actions__secondary">
+        <button class="secondary-btn" type="button" :disabled="!canSendTest || loading" @click="sendTest">
+          Invia test
+        </button>
+        <button v-if="canRegenerate" class="secondary-btn" type="button" :disabled="loading || !vapidConfigured" @click="regenerate">
+          Rigenera
+        </button>
+        <button class="danger-btn notification-actions__danger" type="button" :disabled="!supported || !subscribed || loading" @click="disable">
+          Disattiva
+        </button>
+      </div>
     </div>
   </section>
 </template>
@@ -56,13 +59,16 @@ const canEnable = computed(() => supported.value && vapidConfigured.value && per
 const canSendTest = computed(() => supported.value && vapidConfigured.value && status.value === 'active' && subscribed.value);
 const canRegenerate = computed(() => supported.value && permission.value === 'granted');
 
-const statusLabel = computed(() => {
-  if (status.value === 'unsupported') return 'Non supportate';
-  if (status.value === 'active') return 'Notifiche attive';
-  if (status.value === 'permissionDenied') return 'Notifiche bloccate';
-  if (status.value === 'permissionGrantedNoSubscription') return 'Permesso concesso';
-  if (status.value === 'backendError') return 'Errore server';
-  return 'Non richieste';
+const statusBadgeLabel = computed(() => {
+  if (status.value === 'active') return 'Attive';
+  if (status.value === 'permissionDenied') return 'Bloccate';
+  return 'Non attive';
+});
+
+const statusBadgeClass = computed(() => {
+  if (status.value === 'active') return 'notification-status-badge--active';
+  if (status.value === 'permissionDenied') return 'notification-status-badge--blocked';
+  return 'notification-status-badge--inactive';
 });
 
 const helperText = computed(() => {
@@ -70,9 +76,18 @@ const helperText = computed(() => {
   if (status.value === 'permissionDenied') return 'Le notifiche sono bloccate: riattivale dalle impostazioni del browser.';
   if (status.value === 'permissionGrantedNoSubscription') return 'Permesso concesso, notifiche non ancora attive.';
   if (status.value === 'backendError') return 'Permesso concesso, ma salvataggio sul server non riuscito.';
-  if (status.value === 'active') return 'Notifiche attive.';
+  if (status.value === 'active') return 'Riceverai promemoria per gli eventi con notifica attiva.';
   if (!vapidConfigured.value) return 'Le notifiche push non sono ancora configurate sul server.';
-  return 'Ricevi promemoria anche quando la PWA non e aperta, dove supportato.';
+  if (isIos.value) return "Su iPhone le notifiche funzionano solo se l'app e aggiunta alla schermata Home.";
+  return 'Ricevi promemoria anche quando la PWA non e aperta.';
+});
+
+const alertMessage = computed(() => error.value || feedback.value);
+
+const alertClass = computed(() => {
+  if (error.value) return 'notification-alert--error';
+  if (feedback.value) return 'notification-alert--success';
+  return 'notification-alert--info';
 });
 
 const refresh = async ({ clearMessages = false } = {}) => {
@@ -187,3 +202,125 @@ const sendTest = async () => {
 
 onMounted(() => refresh({ clearMessages: true }));
 </script>
+
+<style scoped>
+.notification-card {
+  gap: 12px;
+}
+
+.notification-card__header {
+  align-items: flex-start;
+}
+
+.notification-card__heading {
+  min-width: 0;
+}
+
+.notification-card__description {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.notification-status-badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.notification-status-badge--active {
+  border-color: color-mix(in srgb, var(--app-success) 42%, var(--app-border));
+  background: color-mix(in srgb, var(--app-success) 14%, var(--app-surface));
+  color: var(--app-success);
+}
+
+.notification-status-badge--inactive {
+  background: var(--app-surface-soft);
+  color: var(--app-muted);
+}
+
+.notification-status-badge--blocked {
+  border-color: var(--app-danger-border);
+  background: var(--app-danger-surface);
+  color: var(--app-danger);
+}
+
+.notification-alert {
+  margin: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  padding: 9px 11px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.notification-alert--success {
+  border-color: color-mix(in srgb, var(--app-success) 36%, var(--app-border));
+  background: color-mix(in srgb, var(--app-success) 12%, var(--app-surface));
+  color: var(--app-success);
+}
+
+.notification-alert--error {
+  border-color: var(--app-danger-border);
+  background: var(--app-danger-surface);
+  color: var(--app-danger);
+}
+
+.notification-alert--info {
+  border-color: color-mix(in srgb, var(--app-accent) 32%, var(--app-border));
+  background: color-mix(in srgb, var(--app-accent) 10%, var(--app-surface));
+  color: var(--app-accent-strong);
+}
+
+.notification-actions {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.notification-actions__primary {
+  width: 100%;
+}
+
+.notification-actions__secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.notification-actions__secondary button {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
+.notification-actions__danger {
+  grid-column: 1 / -1;
+  background: transparent;
+}
+
+.notification-actions__secondary button:disabled,
+.notification-actions__primary:disabled {
+  opacity: 0.58;
+  filter: saturate(0.72);
+}
+
+@media (max-width: 430px) {
+  .notification-card {
+    gap: 10px;
+  }
+
+  .notification-card__header {
+    gap: 8px;
+  }
+}
+</style>
