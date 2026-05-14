@@ -10,7 +10,7 @@ export default defineConfig({
             srcDir: 'src',
             filename: 'service-worker.ts',
             registerType: 'autoUpdate',
-            includeAssets: ['apple-touch-icon.png', 'icons/pwa-192x192.png', 'icons/pwa-512x512.png', 'icons/maskable-icon-512x512.png'],
+            includeAssets: ['apple-touch-icon.png', 'icons/pwa-192x192.png', 'icons/pwa-512x512.png', 'icons/maskable-icon-512x512.png', 'icons/badge-72x72.png'],
             manifest: {
                 name: 'LifePlanner',
                 short_name: 'LifePlanner',
