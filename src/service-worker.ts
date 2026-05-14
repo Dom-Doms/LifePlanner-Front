@@ -26,6 +26,12 @@ interface PushPayload {
 self.addEventListener('push', (event) => {
   const payload = readPayload(event);
   const targetUrl = payload.data?.url ?? payload.url ?? '/day';
+  debugPushSw('push received', {
+    hasData: Boolean(event.data),
+    title: payload.title,
+    tag: payload.tag,
+    targetUrl,
+  });
   event.waitUntil(
     self.registration.showNotification(payload.title ?? 'LifePlanner', {
       body: payload.body ?? '',
@@ -38,6 +44,7 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
+  debugPushSw('notification click', { url: event.notification.data?.url });
   event.notification.close();
   const url = new URL(event.notification.data?.url ?? '/day', self.location.origin).href;
   event.waitUntil(openOrFocus(url));
@@ -66,4 +73,14 @@ const openOrFocus = async (url: string) => {
     return;
   }
   await self.clients.openWindow(url);
+};
+
+const debugPushSw = (message: string, data?: unknown) => {
+  const isDebugHost = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+  if (!isDebugHost) return;
+  if (data === undefined) {
+    console.debug(`[push-sw] ${message}`);
+    return;
+  }
+  console.debug(`[push-sw] ${message}`, data);
 };

@@ -19,6 +19,13 @@ interface PushTestRequest {
   url?: string;
 }
 
+export interface PushTestResponse {
+  activeSubscriptions: number;
+  sent: number;
+  failed: number;
+  errors: string[];
+}
+
 export type PushNotificationStatus =
   | 'unsupported'
   | 'permissionDefault'
@@ -95,7 +102,7 @@ export const refreshPushStatus = async (): Promise<PushStatusResult> => {
   }
 };
 
-export const subscribeToPushNotifications = async () => {
+export const subscribeToPushNotifications = async (forceResubscribe = false) => {
   if (!isPushSupported()) {
     throw new Error('Notifiche push non supportate su questo dispositivo.');
   }
@@ -109,12 +116,18 @@ export const subscribeToPushNotifications = async () => {
   const registration = await navigator.serviceWorker.ready;
   debugPush('serviceWorker ready', { scope: registration.scope });
   const existing = await registration.pushManager.getSubscription();
+  if (existing && forceResubscribe) {
+    debugPush('force resubscribe: deleting existing subscription', { endpoint: existing.endpoint });
+    await deleteSubscriptionFromBackend(existing.endpoint);
+    await existing.unsubscribe();
+  }
   const subscription =
-    existing ??
-    (await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    }));
+    forceResubscribe || !existing
+      ? await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        })
+      : existing;
   await sendSubscriptionToBackend(subscription);
   debugPush('backend save success', { endpoint: subscription.endpoint });
   const currentSubscription = await registration.pushManager.getSubscription();
@@ -151,7 +164,8 @@ export const deleteSubscriptionFromBackend = async (endpoint: string) => {
 };
 
 export const sendTestNotification = async (payload: PushTestRequest = {}) => {
-  await httpClient.post('/push/test', payload);
+  const { data } = await httpClient.post<PushTestResponse>('/push/test', payload);
+  return data;
 };
 
 export const getVapidPublicKey = async () => {

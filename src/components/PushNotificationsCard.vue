@@ -19,6 +19,9 @@
       <button class="secondary-btn" type="button" :disabled="!supported || !subscribed || loading" @click="disable">
         Disattiva notifiche
       </button>
+      <button v-if="canRegenerate" class="secondary-btn" type="button" :disabled="loading || !vapidConfigured" @click="regenerate">
+        Rigenera notifiche
+      </button>
       <button class="secondary-btn" type="button" :disabled="!canSendTest || loading" @click="sendTest">
         Invia notifica di test
       </button>
@@ -45,11 +48,13 @@ const vapidConfigured = ref(false);
 const loading = ref(false);
 const feedback = ref('');
 const error = ref('');
+const testFailed = ref(false);
 
 const isIos = computed(() => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const supported = computed(() => status.value !== 'unsupported');
 const canEnable = computed(() => supported.value && vapidConfigured.value && permission.value !== 'denied' && status.value !== 'active');
 const canSendTest = computed(() => supported.value && vapidConfigured.value && status.value === 'active' && subscribed.value);
+const canRegenerate = computed(() => supported.value && permission.value === 'granted');
 
 const statusLabel = computed(() => {
   if (status.value === 'unsupported') return 'Non supportate';
@@ -99,10 +104,30 @@ const enable = async () => {
   feedback.value = '';
   error.value = '';
   try {
-    await subscribeToPushNotifications();
+    await subscribeToPushNotifications(status.value !== 'active' || testFailed.value);
     await refresh({ clearMessages: false });
     if (status.value === 'active') {
       feedback.value = 'Notifiche attivate su questo dispositivo.';
+      testFailed.value = false;
+    }
+  } catch (err) {
+    error.value = getErrorMessage(err);
+    await refresh({ clearMessages: false });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const regenerate = async () => {
+  loading.value = true;
+  feedback.value = '';
+  error.value = '';
+  try {
+    await subscribeToPushNotifications(true);
+    await refresh({ clearMessages: false });
+    if (status.value === 'active') {
+      feedback.value = 'Notifiche rigenerate su questo dispositivo.';
+      testFailed.value = false;
     }
   } catch (err) {
     error.value = getErrorMessage(err);
@@ -120,6 +145,7 @@ const disable = async () => {
     await unsubscribeFromPushNotifications();
     await refresh({ clearMessages: false });
     feedback.value = 'Notifiche disattivate su questo dispositivo.';
+    testFailed.value = false;
   } catch (err) {
     error.value = getErrorMessage(err);
     await refresh({ clearMessages: false });
@@ -133,9 +159,26 @@ const sendTest = async () => {
   feedback.value = '';
   error.value = '';
   try {
-    await sendTestNotification();
-    feedback.value = 'Notifica di test inviata.';
+    const result = await sendTestNotification();
+    if (result.activeSubscriptions === 0) {
+      testFailed.value = true;
+      error.value = result.errors[0] ?? 'Nessun dispositivo attivo per le notifiche. Disattiva e riattiva le notifiche.';
+      return;
+    }
+    if (result.failed > 0) {
+      testFailed.value = true;
+      error.value = result.errors[0] ?? 'Invio notifica fallito. Controlla configurazione VAPID o subscription.';
+      return;
+    }
+    if (result.sent > 0) {
+      testFailed.value = false;
+      feedback.value = 'Notifica di test inviata.';
+      return;
+    }
+    testFailed.value = true;
+    error.value = 'Nessun invio notifica confermato dal server.';
   } catch (err) {
+    testFailed.value = true;
     error.value = getErrorMessage(err);
   } finally {
     loading.value = false;
