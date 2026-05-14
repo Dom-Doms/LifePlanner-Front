@@ -29,17 +29,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import {
-  getExistingSubscription,
-  getNotificationPermission,
   getVapidPublicKey,
-  isPushSupported,
+  refreshPushStatus,
   sendTestNotification,
   subscribeToPushNotifications,
   unsubscribeFromPushNotifications,
+  type PushNotificationStatus,
 } from '@/services/pushNotificationService';
 import { getErrorMessage } from '@/utils/errorMessage';
 
-const supported = ref(false);
+const status = ref<PushNotificationStatus>('permissionDefault');
 const permission = ref<NotificationPermission | 'unsupported'>('default');
 const subscribed = ref(false);
 const vapidConfigured = ref(false);
@@ -48,33 +47,42 @@ const feedback = ref('');
 const error = ref('');
 
 const isIos = computed(() => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-const canEnable = computed(() => supported.value && vapidConfigured.value && permission.value !== 'denied');
-const canSendTest = computed(() => supported.value && vapidConfigured.value && permission.value === 'granted' && subscribed.value);
+const supported = computed(() => status.value !== 'unsupported');
+const canEnable = computed(() => supported.value && vapidConfigured.value && permission.value !== 'denied' && status.value !== 'active');
+const canSendTest = computed(() => supported.value && vapidConfigured.value && status.value === 'active' && subscribed.value);
 
 const statusLabel = computed(() => {
-  if (!supported.value) return 'Non supportate';
-  if (permission.value === 'granted') return 'Consentite';
-  if (permission.value === 'denied') return 'Bloccate';
+  if (status.value === 'unsupported') return 'Non supportate';
+  if (status.value === 'active') return 'Notifiche attive';
+  if (status.value === 'permissionDenied') return 'Notifiche bloccate';
+  if (status.value === 'permissionGrantedNoSubscription') return 'Permesso concesso';
+  if (status.value === 'backendError') return 'Errore server';
   return 'Non richieste';
 });
 
 const helperText = computed(() => {
-  if (!supported.value) return 'Questo browser non supporta Web Push per la PWA.';
+  if (status.value === 'unsupported') return 'Questo browser non supporta Web Push per la PWA.';
+  if (status.value === 'permissionDenied') return 'Le notifiche sono bloccate: riattivale dalle impostazioni del browser.';
+  if (status.value === 'permissionGrantedNoSubscription') return 'Permesso concesso, notifiche non ancora attive.';
+  if (status.value === 'backendError') return 'Permesso concesso, ma salvataggio sul server non riuscito.';
+  if (status.value === 'active') return 'Notifiche attive.';
   if (!vapidConfigured.value) return 'Le notifiche push non sono ancora configurate sul server.';
-  if (permission.value === 'denied') return 'Le notifiche sono bloccate: riattivale dalle impostazioni del browser.';
-  if (permission.value === 'granted') {
-    return subscribed.value
-      ? 'Le notifiche push sono attive per questo dispositivo.'
-      : 'Permesso concesso: puoi attivare la subscription push per questo dispositivo.';
-  }
   return 'Ricevi promemoria anche quando la PWA non e aperta, dove supportato.';
 });
 
-const refresh = async () => {
-  supported.value = isPushSupported();
-  permission.value = getNotificationPermission();
-  subscribed.value = Boolean(await getExistingSubscription());
-  if (!supported.value) {
+const refresh = async ({ clearMessages = false } = {}) => {
+  if (clearMessages) {
+    feedback.value = '';
+    error.value = '';
+  }
+  const result = await refreshPushStatus();
+  status.value = result.status;
+  permission.value = result.permission;
+  subscribed.value = Boolean(result.subscription);
+  if (result.status === 'backendError') {
+    error.value = 'Permesso concesso, ma salvataggio sul server non riuscito.';
+  }
+  if (result.status === 'unsupported') {
     vapidConfigured.value = false;
     return;
   }
@@ -92,11 +100,13 @@ const enable = async () => {
   error.value = '';
   try {
     await subscribeToPushNotifications();
-    await refresh();
-    feedback.value = 'Notifiche attivate su questo dispositivo.';
+    await refresh({ clearMessages: false });
+    if (status.value === 'active') {
+      feedback.value = 'Notifiche attivate su questo dispositivo.';
+    }
   } catch (err) {
     error.value = getErrorMessage(err);
-    await refresh();
+    await refresh({ clearMessages: false });
   } finally {
     loading.value = false;
   }
@@ -108,10 +118,11 @@ const disable = async () => {
   error.value = '';
   try {
     await unsubscribeFromPushNotifications();
-    await refresh();
+    await refresh({ clearMessages: false });
     feedback.value = 'Notifiche disattivate su questo dispositivo.';
   } catch (err) {
     error.value = getErrorMessage(err);
+    await refresh({ clearMessages: false });
   } finally {
     loading.value = false;
   }
@@ -131,5 +142,5 @@ const sendTest = async () => {
   }
 };
 
-onMounted(refresh);
+onMounted(() => refresh({ clearMessages: true }));
 </script>
