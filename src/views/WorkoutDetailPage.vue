@@ -2,9 +2,12 @@
   <AppLayout>
     <section v-if="template" class="workout-detail">
       <div class="workout-detail__hero">
-        <div class="page-header page-header--row">
-          <button class="icon-btn icon-btn--light" type="button" @click="router.push('/workouts')">‹</button>
-          <RouterLink class="secondary-btn" :to="`/workouts/${template.id}/edit`">Modifica</RouterLink>
+        <div class="page-header page-header--row workout-detail__action-bar">
+          <button class="icon-btn icon-btn--light" type="button" @click="router.push('/workouts')">&lsaquo;</button>
+          <div class="workout-detail__actions">
+            <RouterLink class="secondary-btn secondary-btn--compact" :to="`/workouts/${template.id}/edit`">Modifica</RouterLink>
+            <button class="danger-btn danger-btn--compact" type="button" @click="remove">Elimina</button>
+          </div>
         </div>
         <h1>{{ template.name }}</h1>
         <p v-if="template.description">{{ template.description }}</p>
@@ -41,7 +44,6 @@
       </section>
 
       <div class="workout-bottom-actions">
-        <button class="danger-btn" type="button" @click="remove">Elimina</button>
         <button class="primary-btn" type="button" :disabled="!sequence.length || starting" @click="start">
           START
         </button>

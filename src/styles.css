@@ -286,6 +286,13 @@ textarea {
   width: 100%;
 }
 
+.secondary-btn--compact,
+.danger-btn--compact {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
 .primary-btn {
   background: var(--app-accent);
   color: var(--app-primary-contrast);
@@ -507,7 +514,7 @@ textarea {
 .timeline-row {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
-  height: 48px;
+  height: var(--timeline-hour-height, 64px);
   min-width: 0;
 }
 
@@ -546,6 +553,51 @@ textarea {
   overflow: hidden;
   position: relative;
   padding-right: 26px;
+  border: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+  align-content: start;
+  gap: 2px;
+}
+
+.timeline-event-card strong,
+.timeline-event-card small,
+.timeline-event-card p {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-event-card--compact {
+  padding: 4px 22px 4px 7px;
+  border-radius: 10px;
+  gap: 0;
+}
+
+.timeline-event-card--compact small:not(.timeline-event-time),
+.timeline-event-card--compact p {
+  display: none;
+}
+
+.timeline-event-card--tiny {
+  padding: 0;
+  border-radius: 6px;
+  gap: 0;
+}
+
+.timeline-event-card--tiny strong,
+.timeline-event-card--tiny small,
+.timeline-event-card--tiny p {
+  display: none;
+}
+
+.timeline-event-card--tiny .event-completed-check {
+  top: 50%;
+  right: 3px;
+  width: 10px;
+  height: 10px;
+  border: 0;
+  font-size: 8px;
+  transform: translateY(-50%);
 }
 
 .timeline-item--positioned {
@@ -991,6 +1043,18 @@ textarea {
   gap: 12px;
 }
 
+.workout-detail__action-bar {
+  align-items: center;
+}
+
+.workout-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
 .workout-detail__hero h1 {
   margin: 0;
   font-size: 34px;
@@ -1030,13 +1094,32 @@ textarea {
   bottom: calc(78px + env(safe-area-inset-bottom));
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--app-border);
   border-radius: 18px;
   background: var(--app-bottom-nav-bg);
   backdrop-filter: blur(14px);
+}
+
+.workout-bottom-actions .primary-btn {
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  .workout-detail__action-bar {
+    align-items: flex-start;
+  }
+
+  .workout-detail__actions {
+    flex: 1 1 auto;
+  }
+
+  .workout-detail__actions .secondary-btn,
+  .workout-detail__actions .danger-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 .workout-run-screen {

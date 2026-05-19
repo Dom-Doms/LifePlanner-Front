@@ -20,12 +20,16 @@
       >
         <strong>{{ event.title }}</strong>
         <small>Tutto il giorno</small>
-        <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">✓</span>
+        <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">&#10003;</span>
       </button>
     </div>
     <p v-if="!events.length" class="timeline-empty-state">Nessun evento per questa giornata.</p>
     <p v-if="showCurrentTimeChip" class="timeline-now-chip">Ora attuale: {{ currentTimeLabel }}</p>
-    <div v-if="showTimelineGrid" class="timeline timeline--day-grid" :style="{ minHeight: `${timelineHeight}px` }">
+    <div
+      v-if="showTimelineGrid"
+      class="timeline timeline--day-grid"
+      :style="{ minHeight: `${timelineHeight}px`, '--timeline-hour-height': `${hourHeight}px` }"
+    >
       <div class="timeline-grid" aria-hidden="true">
         <div v-for="hour in visibleHours" :key="hour" class="timeline-row">
           <div class="timeline-hour-label">{{ formatHour(hour) }}</div>
@@ -50,21 +54,26 @@
           class="timeline-event"
           :style="{
             top: `${event.top}px`,
-            minHeight: `${event.height}px`,
+            height: `${event.height}px`,
             left: `${event.leftPercent}%`,
             width: `calc(${event.widthPercent}% - 4px)`,
           }"
         >
           <button
             class="event-card event-card--button timeline-event-card"
-            :class="{ 'event-card--completed': event.type === 'WORKOUT' && event.completed }"
+            :class="{
+              'event-card--completed': event.type === 'WORKOUT' && event.completed,
+              'timeline-event-card--tiny': event.isTiny,
+              'timeline-event-card--compact': event.isCompact,
+            }"
             type="button"
+            :title="event.title"
             @click="$emit('select', event)"
           >
             <strong>{{ event.title }}</strong>
             <small class="timeline-event-time">{{ event.startTime?.slice(0, 5) }}<span v-if="event.endTime"> - {{ event.endTime.slice(0, 5) }}</span></small>
             <small>{{ labelFor(event.type) }}<span v-if="event.location"> - {{ event.location }}</span></small>
-            <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">✓</span>
+            <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">&#10003;</span>
             <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
           </button>
         </article>
@@ -88,8 +97,10 @@ defineEmits<{ select: [event: CalendarEventResponse] }>();
 
 const timelineModeKey = 'lifeplanner.timelineMode';
 const defaultTimelineMode: TimelineMode = 'COMPACT_EVENTS';
-const pixelsPerMinute = 0.8;
+const hourHeight = 64;
 const minutesPerHour = 60;
+const compactEventHeight = 34;
+const tinyEventHeight = 14;
 const now = ref(new Date());
 const timelineMode = ref<TimelineMode>(readTimelineMode());
 let intervalId: number | undefined;
@@ -102,12 +113,12 @@ const currentMinutes = computed(() => now.value.getHours() * minutesPerHour + no
 const visibleRange = computed(() => resolveVisibleRange(timedEvents.value, timelineMode.value, now.value, props.date));
 const visibleStartMinutes = computed(() => visibleRange.value.startHour * minutesPerHour);
 const visibleEndMinutes = computed(() => visibleRange.value.endHour * minutesPerHour);
-const timelineHeight = computed(() => (visibleEndMinutes.value - visibleStartMinutes.value) * pixelsPerMinute);
+const timelineHeight = computed(() => minutesToPixels(visibleEndMinutes.value - visibleStartMinutes.value));
 const visibleHours = computed(() =>
   Array.from({ length: visibleRange.value.endHour - visibleRange.value.startHour }, (_, index) => visibleRange.value.startHour + index),
 );
 const showTimelineGrid = computed(() => visibleRange.value.endHour > visibleRange.value.startHour);
-const currentTimeTop = computed(() => (currentMinutes.value - visibleStartMinutes.value) * pixelsPerMinute);
+const currentTimeTop = computed(() => minutesToPixels(currentMinutes.value - visibleStartMinutes.value));
 const showCurrentTimeLine = computed(() => {
   const insideVisibleRange = currentMinutes.value >= visibleStartMinutes.value && currentMinutes.value <= visibleEndMinutes.value;
   return props.date === localIsoDate(now.value) && insideVisibleRange;
@@ -119,6 +130,8 @@ const currentTimeLabel = computed(() =>
   `${String(now.value.getHours()).padStart(2, '0')}:${String(now.value.getMinutes()).padStart(2, '0')}`,
 );
 const timedEventBlocks = computed(() => layoutTimedEvents(timedEvents.value));
+
+const minutesToPixels = (minutes: number) => (minutes / minutesPerHour) * hourHeight;
 
 function readTimelineMode(): TimelineMode {
   if (typeof window === 'undefined') return defaultTimelineMode;
@@ -143,7 +156,7 @@ const resolveVisibleRange = (events: CalendarEventResponse[], mode: TimelineMode
   const ranges = events.map((event) => {
     const start = timeToMinutes(event.startTime) ?? 0;
     const end = timeToMinutes(event.endTime) ?? start + minutesPerHour;
-    return { start, end: Math.max(end, start + minutesPerHour) };
+    return { start, end: Math.max(end, start) };
   });
   const firstStart = Math.min(...ranges.map((range) => range.start));
   const lastEnd = Math.max(...ranges.map((range) => range.end));
@@ -170,9 +183,9 @@ const layoutTimedEvents = (events: CalendarEventResponse[]) => {
     .map((event) => {
       const start = timeToMinutes(event.startTime) ?? visibleStartMinutes.value;
       const rawEnd = timeToMinutes(event.endTime) ?? start + minutesPerHour;
-      const end = Math.max(rawEnd, start + minutesPerHour);
+      const end = Math.max(rawEnd, start);
       const clampedStart = Math.max(start, visibleStartMinutes.value);
-      const clampedEnd = Math.min(Math.max(end, clampedStart + 30), visibleEndMinutes.value);
+      const clampedEnd = Math.min(Math.max(end, clampedStart), visibleEndMinutes.value);
       return { event, start, end, clampedStart, clampedEnd };
     })
     .sort((a, b) => a.start - b.start || a.end - b.end);
@@ -202,15 +215,20 @@ const layoutTimedEvents = (events: CalendarEventResponse[]) => {
       return { ...item, columnIndex: nextColumnIndex };
     });
     const columnCount = Math.max(columns.length, 1);
-    return positioned.map((item) => ({
-      ...item.event,
-      top: (item.clampedStart - visibleStartMinutes.value) * pixelsPerMinute,
-      height: Math.max((item.clampedEnd - item.clampedStart) * pixelsPerMinute, 44),
-      columnIndex: item.columnIndex,
-      columnCount,
-      widthPercent: 100 / columnCount,
-      leftPercent: (item.columnIndex * 100) / columnCount,
-    }));
+    return positioned.map((item) => {
+      const height = Math.max(minutesToPixels(item.clampedEnd - item.clampedStart), 1);
+      return {
+        ...item.event,
+        top: minutesToPixels(item.clampedStart - visibleStartMinutes.value),
+        height,
+        isTiny: height < tinyEventHeight,
+        isCompact: height < compactEventHeight,
+        columnIndex: item.columnIndex,
+        columnCount,
+        widthPercent: 100 / columnCount,
+        leftPercent: (item.columnIndex * 100) / columnCount,
+      };
+    });
   });
 };
 
