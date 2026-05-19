@@ -544,6 +544,8 @@ textarea {
 .timeline-event-card {
   height: 100%;
   overflow: hidden;
+  position: relative;
+  padding-right: 26px;
 }
 
 .timeline-item--positioned {
@@ -613,6 +615,7 @@ textarea {
   display: grid;
   gap: 4px;
   min-width: 0;
+  position: relative;
 }
 
 .event-card--button {
@@ -636,25 +639,45 @@ textarea {
 }
 
 .event-card--completed {
-  border: 1px solid color-mix(in srgb, var(--app-success) 56%, var(--app-border));
-  border-color: color-mix(in srgb, var(--app-success) 42%, var(--app-border));
+  border: 1px solid color-mix(in srgb, var(--app-success) 34%, var(--app-border));
   background:
-    linear-gradient(0deg, color-mix(in srgb, var(--app-success) 10%, transparent), color-mix(in srgb, var(--app-success) 10%, transparent)),
+    linear-gradient(0deg, color-mix(in srgb, var(--app-success) 7%, transparent), color-mix(in srgb, var(--app-success) 7%, transparent)),
     var(--app-surface-subtle);
-  box-shadow: inset 3px 0 0 var(--app-success);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--app-success) 76%, transparent);
 }
 
-.event-completed-badge,
+.event-card--completed strong {
+  padding-right: 18px;
+}
+
+.event-completed-check {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-success) 16%, var(--app-surface));
+  color: var(--app-success);
+  border: 1px solid color-mix(in srgb, var(--app-success) 36%, var(--app-border));
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .workout-completed-badge,
 .workout-completed-note {
   width: fit-content;
   border: 1px solid color-mix(in srgb, var(--app-success) 44%, var(--app-border));
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 3px 7px;
   background: color-mix(in srgb, var(--app-success) 12%, var(--app-surface));
   color: var(--app-success);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .workout-card,
@@ -679,7 +702,7 @@ textarea {
   text-align: left;
   cursor: pointer;
   display: grid;
-  gap: 8px;
+  gap: 0;
 }
 
 .workout-card--rich {
@@ -706,6 +729,14 @@ textarea {
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.workout-card__meta .workout-completed-badge {
+  border-color: color-mix(in srgb, var(--app-success) 44%, var(--app-border));
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--app-success) 12%, var(--app-surface));
+  color: var(--app-success);
+  line-height: 1.2;
 }
 
 .workout-card__footer {

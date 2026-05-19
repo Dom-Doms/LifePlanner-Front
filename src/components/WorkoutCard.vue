@@ -4,6 +4,7 @@
       <h3>{{ title }}</h3>
       <p v-if="description">{{ description }}</p>
       <div class="workout-card__meta">
+        <slot name="meta" />
         <span>{{ count }} esercizi</span>
         <span>{{ durationLabel }}</span>
         <span v-if="groups">{{ groups }} gruppi</span>

@@ -20,7 +20,7 @@
       >
         <strong>{{ event.title }}</strong>
         <small>Tutto il giorno</small>
-        <small v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-badge">Completato</small>
+        <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">✓</span>
       </button>
     </div>
     <p v-if="!events.length" class="timeline-empty-state">Nessun evento per questa giornata.</p>
@@ -64,7 +64,7 @@
             <strong>{{ event.title }}</strong>
             <small class="timeline-event-time">{{ event.startTime?.slice(0, 5) }}<span v-if="event.endTime"> - {{ event.endTime.slice(0, 5) }}</span></small>
             <small>{{ labelFor(event.type) }}<span v-if="event.location"> - {{ event.location }}</span></small>
-            <small v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-badge">Completato</small>
+            <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">✓</span>
             <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
           </button>
         </article>

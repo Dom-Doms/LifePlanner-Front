@@ -50,7 +50,7 @@
               @click.stop="openSelectedEventModal(event)"
             >
               <span>{{ event.title }}</span>
-              <small v-if="event.type === 'WORKOUT' && event.completed">Completato</small>
+              <small v-if="event.type === 'WORKOUT' && event.completed" aria-label="Workout completato">✓ Done</small>
             </button>
           </li>
         </ul>

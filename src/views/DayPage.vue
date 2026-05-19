@@ -42,8 +42,11 @@
           :description="workoutCardDescription(card)"
           :count="workoutCardStepCount(card)"
           :duration-seconds="card.template ? estimateWorkoutTemplateSeconds(card.template) : null"
-        />
-        <span v-if="card.event.completed" class="workout-completed-badge">Completato</span>
+        >
+          <template #meta>
+            <span v-if="card.event.completed" class="workout-completed-badge">✓ Completato</span>
+          </template>
+        </WorkoutCard>
       </button>
     </section>
     <EventFormModal
@@ -164,7 +167,6 @@ const workoutCardStepCount = (card: DayWorkoutCard) => {
 
 const workoutCardDescription = (card: DayWorkoutCard) => {
   if (!card.template) return 'Scheda non disponibile';
-  if (card.event.completed) return 'Allenamento completato';
   return card.session.participants.map((participant) => participant.displayName).join(', ') || card.template.description || '';
 };
 
