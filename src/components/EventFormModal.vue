@@ -117,7 +117,17 @@
           </div>
         </section>
 
-        <p v-if="linkedWorkoutLabel" class="empty-state">{{ linkedWorkoutLabel }}</p>
+        <section v-if="isSavedWorkoutEvent" class="sub-panel">
+          <strong>Allenamento collegato</strong>
+          <p class="empty-state">{{ linkedWorkoutLabel }}</p>
+          <RouterLink
+            v-if="draft.workoutTemplateId"
+            class="secondary-btn secondary-btn--full"
+            :to="`/workouts/${draft.workoutTemplateId}`"
+          >
+            Apri scheda allenamento
+          </RouterLink>
+        </section>
       </div>
 
       <div class="modal-actions event-modal__footer">
@@ -187,8 +197,16 @@ const modalForm = ref<HTMLFormElement | null>(null);
 const modalBody = ref<HTMLElement | null>(null);
 let searchTimer: number | undefined;
 
+const isWorkoutEvent = computed(() => draft.type === 'WORKOUT');
+const isSavedWorkoutEvent = computed(() => Boolean(props.event) && isWorkoutEvent.value);
 const showWorkoutTemplate = computed(() => props.workoutMode && !props.event);
-const linkedWorkoutLabel = computed(() => (draft.workoutSessionId ? `Allenamento collegato: sessione #${draft.workoutSessionId}` : ''));
+const linkedWorkoutLabel = computed(() => {
+  if (!isWorkoutEvent.value) return '';
+  const template = props.templates.find((item) => item.id === draft.workoutTemplateId);
+  if (template) return template.name;
+  if (draft.workoutSessionId) return `Sessione allenamento #${draft.workoutSessionId}`;
+  return 'Scheda allenamento non disponibile';
+});
 const showNoResults = computed(() => userQuery.value.length >= 2 && searchDone.value && !userResults.value.length && !searchError.value);
 const reminderValues = new Set([0, 10, 30, 60, 1440]);
 
@@ -314,7 +332,7 @@ const submit = () => {
       recurrenceUntil: draft.recurrenceType === 'NONE' ? null : draft.recurrenceUntil,
       reminderEnabled: reminderOption.value > 0,
       reminderMinutesBefore: reminderOption.value > 0 ? reminderOption.value : null,
-      workoutTemplateId: showWorkoutTemplate.value ? draft.workoutTemplateId : null,
+      workoutTemplateId: isWorkoutEvent.value ? draft.workoutTemplateId : null,
     },
     props.event?.id,
   );

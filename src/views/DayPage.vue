@@ -30,18 +30,19 @@
         <h2>Dettaglio allenamento</h2>
         <RouterLink to="/workouts">Apri</RouterLink>
       </div>
-      <RouterLink
+      <button
         v-for="session in workouts.daySessions"
         :key="session.id"
-        :to="session.templateId ? `/workouts/${session.templateId}` : '/workouts'"
-        class="workout-card-link"
+        class="workout-card-link workout-card-button"
+        type="button"
+        @click="openWorkoutSessionEvent(session)"
       >
         <WorkoutCard
           :title="session.title"
           :description="session.participants.map((p) => p.displayName).join(', ')"
           :count="session.exercises.length"
         />
-      </RouterLink>
+      </button>
     </section>
     <EventFormModal
       v-if="eventOpen"
@@ -79,7 +80,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import axios from 'axios';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ContextSelector from '@/components/ContextSelector.vue';
 import DayTimeline from '@/components/DayTimeline.vue';
@@ -87,12 +88,11 @@ import EventFormModal from '@/components/EventFormModal.vue';
 import WorkoutCard from '@/components/WorkoutCard.vue';
 import { usePlanningStore } from '@/stores/planningStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
-import type { CalendarEventRequest, CalendarEventResponse, DayContextRequest, RecurrenceType } from '@/types/api';
+import type { CalendarEventRequest, CalendarEventResponse, DayContextRequest, RecurrenceType, WorkoutSessionResponse } from '@/types/api';
 import { formatDate, todayIso } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errorMessage';
 
 const route = useRoute();
-const router = useRouter();
 const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const eventOpen = ref(false);
@@ -126,12 +126,18 @@ const openWorkoutModal = () => {
 };
 
 const openSelectedEventModal = (event: CalendarEventResponse) => {
-  if (event.type === 'WORKOUT' && event.workoutTemplateId) {
-    router.push(`/workouts/${event.workoutTemplateId}`);
-    return;
-  }
   clearEventFormErrors();
   selectedEvent.value = event;
+};
+
+const openWorkoutSessionEvent = (session: WorkoutSessionResponse) => {
+  const event = planning.events.find((item) =>
+    item.type === 'WORKOUT'
+    && (item.workoutSessionId === session.id || (session.templateId != null && item.workoutTemplateId === session.templateId)),
+  );
+  if (event) {
+    openSelectedEventModal(event);
+  }
 };
 
 const closeEventModal = () => {

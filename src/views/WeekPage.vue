@@ -15,13 +15,16 @@
     </section>
 
     <section class="day-list week-list">
-      <RouterLink
+      <article
         v-for="day in days"
         :key="day"
         class="day-card week-day-card"
         :class="{ 'week-day-card--today': day === today }"
         :style="contextStyle(day)"
-        :to="`/day/${day}`"
+        role="link"
+        tabindex="0"
+        @click="openDay(day)"
+        @keydown.enter="openDay(day)"
       >
         <div class="day-card__top">
           <div class="week-day-card__date">
@@ -40,26 +43,48 @@
         <ul v-if="eventsByDate(day).length" class="week-event-list">
           <li v-for="event in eventsByDate(day).slice(0, 3)" :key="event.id">
             <span>{{ event.allDay ? 'Tutto il giorno' : event.startTime?.slice(0, 5) }}</span>
-            <strong>{{ event.title }}</strong>
+            <button class="week-event-button" type="button" @click.stop="openSelectedEventModal(event)">
+              {{ event.title }}
+            </button>
           </li>
         </ul>
         <p v-else class="empty-state">Nessun evento.</p>
         <small v-if="eventsByDate(day).length > 3" class="week-more">+{{ eventsByDate(day).length - 3 }} altri</small>
-      </RouterLink>
+      </article>
     </section>
+    <EventFormModal
+      v-if="selectedEvent"
+      :date="selectedEvent.eventDate"
+      :event="selectedEvent"
+      :templates="workouts.templates"
+      :server-error="eventFormError"
+      :server-field-errors="eventFormFieldErrors"
+      @close="closeSelectedEventModal"
+      @save="saveEvent"
+      @delete="deleteEvent"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
+import EventFormModal from '@/components/EventFormModal.vue';
 import { usePlanningStore } from '@/stores/planningStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
+import type { CalendarEventRequest, CalendarEventResponse } from '@/types/api';
 import { addDays, formatShortDate, startOfWeek, todayIso, toIsoDate } from '@/utils/date';
+import { getErrorMessage } from '@/utils/errorMessage';
 
+const router = useRouter();
 const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const current = ref(new Date());
+const selectedEvent = ref<CalendarEventResponse | null>(null);
+const eventFormError = ref('');
+const eventFormFieldErrors = ref<Record<string, string | string[]>>({});
 const weekStart = computed(() => startOfWeek(current.value));
 const days = computed(() => Array.from({ length: 7 }, (_, index) => toIsoDate(addDays(weekStart.value, index))));
 const firstDay = computed(() => days.value[0] ?? toIsoDate(weekStart.value));
@@ -89,11 +114,62 @@ const load = async () => {
   await Promise.all([
     planning.loadWeek(firstDay.value, lastDay.value),
     workouts.loadSessions(firstDay.value, lastDay.value),
+    workouts.loadTemplates(),
   ]);
 };
 
 const moveWeek = (delta: number) => {
   current.value = addDays(current.value, delta * 7);
+};
+
+const openDay = (day: string) => {
+  router.push(`/day/${day}`);
+};
+
+const clearEventFormErrors = () => {
+  eventFormError.value = '';
+  eventFormFieldErrors.value = {};
+};
+
+const openSelectedEventModal = (event: CalendarEventResponse) => {
+  clearEventFormErrors();
+  selectedEvent.value = event;
+};
+
+const closeSelectedEventModal = () => {
+  clearEventFormErrors();
+  selectedEvent.value = null;
+};
+
+const extractFieldErrors = (err: unknown) => {
+  if (!axios.isAxiosError(err)) return {};
+  const data = err.response?.data as { fieldErrors?: Record<string, string | string[]>; errors?: Record<string, string | string[]> } | undefined;
+  return data?.fieldErrors ?? data?.errors ?? {};
+};
+
+const saveEvent = async (payload: CalendarEventRequest, id?: number) => {
+  try {
+    await planning.saveEvent(payload, id);
+    selectedEvent.value = null;
+    clearEventFormErrors();
+    await load();
+    return true;
+  } catch (err) {
+    eventFormError.value = getErrorMessage(err);
+    eventFormFieldErrors.value = extractFieldErrors(err);
+    return false;
+  }
+};
+
+const deleteEvent = async (event: CalendarEventResponse) => {
+  try {
+    await planning.removeEvent(event.eventDate, event.id);
+    selectedEvent.value = null;
+    clearEventFormErrors();
+    await load();
+  } catch (err) {
+    eventFormError.value = getErrorMessage(err);
+  }
 };
 
 onMounted(load);

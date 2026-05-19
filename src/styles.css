@@ -648,6 +648,16 @@ textarea {
   min-width: 0;
 }
 
+.workout-card-button {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .workout-card--rich {
   gap: 14px;
 }
@@ -1150,6 +1160,19 @@ textarea {
 .week-event-list strong {
   font-size: 14px;
   overflow-wrap: anywhere;
+}
+
+.week-event-button {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--app-text);
+  font-weight: 800;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
 }
 
 .week-more {
