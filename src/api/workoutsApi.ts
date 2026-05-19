@@ -1,6 +1,8 @@
 import { httpClient } from './httpClient';
 import type {
   WorkoutFromTemplateRequest,
+  WorkoutRunResponse,
+  WorkoutRunStateRequest,
   WorkoutSessionRequest,
   WorkoutSessionResponse,
   WorkoutTemplateRequest,
@@ -57,5 +59,42 @@ export const deleteWorkoutSession = async (id: number) => {
 
 export const createWorkoutSessionFromTemplate = async (payload: WorkoutFromTemplateRequest) => {
   const { data } = await httpClient.post<WorkoutSessionResponse>('/workout-sessions/from-template', payload);
+  return data;
+};
+
+export const startWorkoutRun = async (templateId: number, workoutSessionId?: number | null) => {
+  const { data } = await httpClient.post<WorkoutRunResponse>(`/workout-templates/${templateId}/start`, null, {
+    params: workoutSessionId ? { workoutSessionId } : undefined,
+  });
+  return data;
+};
+
+export const getWorkoutRun = async (runId: number) => {
+  const { data } = await httpClient.get<WorkoutRunResponse>(`/workout-runs/${runId}`);
+  return data;
+};
+
+export const updateWorkoutRunState = async (runId: number, payload: WorkoutRunStateRequest) => {
+  const { data } = await httpClient.put<WorkoutRunResponse>(`/workout-runs/${runId}/state`, payload);
+  return data;
+};
+
+export const pauseWorkoutRun = async (runId: number) => {
+  const { data } = await httpClient.post<WorkoutRunResponse>(`/workout-runs/${runId}/pause`);
+  return data;
+};
+
+export const resumeWorkoutRun = async (runId: number) => {
+  const { data } = await httpClient.post<WorkoutRunResponse>(`/workout-runs/${runId}/resume`);
+  return data;
+};
+
+export const completeWorkoutRun = async (runId: number, payload: WorkoutRunStateRequest) => {
+  const { data } = await httpClient.post<WorkoutRunResponse>(`/workout-runs/${runId}/complete`, payload);
+  return data;
+};
+
+export const cancelWorkoutRun = async (runId: number) => {
+  const { data } = await httpClient.post<WorkoutRunResponse>(`/workout-runs/${runId}/cancel`);
   return data;
 };

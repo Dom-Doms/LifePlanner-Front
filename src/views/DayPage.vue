@@ -30,13 +30,18 @@
         <h2>Dettaglio allenamento</h2>
         <RouterLink to="/workouts">Apri</RouterLink>
       </div>
-      <WorkoutCard
+      <RouterLink
         v-for="session in workouts.daySessions"
         :key="session.id"
-        :title="session.title"
-        :description="session.participants.map((p) => p.displayName).join(', ')"
-        :count="session.exercises.length"
-      />
+        :to="session.templateId ? `/workouts/${session.templateId}` : '/workouts'"
+        class="workout-card-link"
+      >
+        <WorkoutCard
+          :title="session.title"
+          :description="session.participants.map((p) => p.displayName).join(', ')"
+          :count="session.exercises.length"
+        />
+      </RouterLink>
     </section>
     <EventFormModal
       v-if="eventOpen"
@@ -74,7 +79,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import axios from 'axios';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ContextSelector from '@/components/ContextSelector.vue';
 import DayTimeline from '@/components/DayTimeline.vue';
@@ -87,6 +92,7 @@ import { formatDate, todayIso } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errorMessage';
 
 const route = useRoute();
+const router = useRouter();
 const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const eventOpen = ref(false);
@@ -120,6 +126,10 @@ const openWorkoutModal = () => {
 };
 
 const openSelectedEventModal = (event: CalendarEventResponse) => {
+  if (event.type === 'WORKOUT' && event.workoutTemplateId) {
+    router.push(`/workouts/${event.workoutTemplateId}`);
+    return;
+  }
   clearEventFormErrors();
   selectedEvent.value = event;
 };
