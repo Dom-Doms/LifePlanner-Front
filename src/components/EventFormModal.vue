@@ -20,10 +20,12 @@
 
         <div class="form-grid">
           <label class="form-field" :class="{ 'form-field--invalid': Boolean(fieldErrors.eventDate) }" data-error-key="eventDate">
+            <span class="field-label">Data</span>
             <input v-model="draft.eventDate" type="date" :aria-invalid="Boolean(fieldErrors.eventDate)" />
             <span v-if="fieldErrors.eventDate" class="field-error">{{ fieldErrors.eventDate }}</span>
           </label>
-          <label class="form-field">
+          <label v-if="showEventTypeSelect" class="form-field">
+            <span class="field-label">Tipo evento</span>
             <select v-model="draft.type">
               <option value="STUDY">Studio</option>
               <option value="EXAM">Esame</option>
@@ -33,22 +35,36 @@
               <option value="OTHER">Altro</option>
             </select>
           </label>
+          <div v-else class="form-field">
+            <span class="field-label">Tipo evento</span>
+            <div class="readonly-field">Allenamento</div>
+          </div>
         </div>
 
-        <label
-          v-if="showWorkoutTemplate"
-          class="form-field"
-          :class="{ 'form-field--invalid': Boolean(fieldErrors.workoutTemplateId) }"
-          data-error-key="workoutTemplateId"
-        >
-          <select v-model.number="draft.workoutTemplateId" :aria-invalid="Boolean(fieldErrors.workoutTemplateId)">
-            <option :value="null" disabled>Scegli scheda allenamento</option>
-            <option v-for="template in templates" :key="template.id" :value="template.id">
-              {{ template.name }}
-            </option>
-          </select>
-          <span v-if="fieldErrors.workoutTemplateId" class="field-error">{{ fieldErrors.workoutTemplateId }}</span>
-        </label>
+        <section v-if="showWorkoutTemplate" class="sub-panel">
+          <label
+            class="form-field"
+            :class="{ 'form-field--invalid': Boolean(fieldErrors.workoutTemplateId) }"
+            data-error-key="workoutTemplateId"
+          >
+            <span class="field-label">Scheda allenamento</span>
+            <select
+              v-model.number="draft.workoutTemplateId"
+              :aria-invalid="Boolean(fieldErrors.workoutTemplateId)"
+              :disabled="!templates.length"
+            >
+              <option :value="null" disabled>Scegli scheda allenamento</option>
+              <option v-for="template in templates" :key="template.id" :value="template.id">
+                {{ template.name }}
+              </option>
+            </select>
+            <span v-if="fieldErrors.workoutTemplateId" class="field-error">{{ fieldErrors.workoutTemplateId }}</span>
+          </label>
+          <p v-if="!templates.length" class="empty-state">Nessuna scheda disponibile.</p>
+          <RouterLink v-if="!templates.length" class="secondary-btn secondary-btn--full" to="/workouts/new">
+            Crea scheda allenamento
+          </RouterLink>
+        </section>
 
         <label class="check-row"><input v-model="draft.allDay" type="checkbox" /> Tutto il giorno</label>
         <div v-if="!draft.allDay" class="form-field" :class="{ 'form-field--invalid': Boolean(fieldErrors.times) }" data-error-key="times">
@@ -199,7 +215,9 @@ let searchTimer: number | undefined;
 
 const isWorkoutEvent = computed(() => draft.type === 'WORKOUT');
 const isSavedWorkoutEvent = computed(() => Boolean(props.event) && isWorkoutEvent.value);
-const showWorkoutTemplate = computed(() => props.workoutMode && !props.event);
+const fixedWorkoutType = computed(() => props.workoutMode || isSavedWorkoutEvent.value);
+const showEventTypeSelect = computed(() => !fixedWorkoutType.value);
+const showWorkoutTemplate = computed(() => isWorkoutEvent.value);
 const linkedWorkoutLabel = computed(() => {
   if (!isWorkoutEvent.value) return '';
   const template = props.templates.find((item) => item.id === draft.workoutTemplateId);
@@ -263,7 +281,7 @@ const validate = () => {
 
   if (!draft.title.trim()) setFieldError('title', 'Inserisci un titolo.');
   if (!draft.eventDate) setFieldError('eventDate', 'Inserisci una data.');
-  if (showWorkoutTemplate.value && !draft.workoutTemplateId) setFieldError('workoutTemplateId', 'Scegli quale allenamento usare.');
+  if (isWorkoutEvent.value && !draft.workoutTemplateId) setFieldError('workoutTemplateId', 'Scegli quale allenamento usare.');
   if (!draft.allDay) {
     if (!draft.startTime || !draft.endTime) {
       setFieldError('times', 'Inserisci ora di inizio e ora di fine.');
