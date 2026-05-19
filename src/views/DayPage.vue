@@ -35,7 +35,7 @@
         :key="session.id"
         class="workout-card-link workout-card-button"
         type="button"
-        @click="openWorkoutSessionEvent(session)"
+        @click="openWorkoutSessionDetail(session)"
       >
         <WorkoutCard
           :title="session.title"
@@ -80,7 +80,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import axios from 'axios';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ContextSelector from '@/components/ContextSelector.vue';
 import DayTimeline from '@/components/DayTimeline.vue';
@@ -93,6 +93,7 @@ import { formatDate, todayIso } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errorMessage';
 
 const route = useRoute();
+const router = useRouter();
 const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const eventOpen = ref(false);
@@ -130,14 +131,8 @@ const openSelectedEventModal = (event: CalendarEventResponse) => {
   selectedEvent.value = event;
 };
 
-const openWorkoutSessionEvent = (session: WorkoutSessionResponse) => {
-  const event = planning.events.find((item) =>
-    item.type === 'WORKOUT'
-    && (item.workoutSessionId === session.id || (session.templateId != null && item.workoutTemplateId === session.templateId)),
-  );
-  if (event) {
-    openSelectedEventModal(event);
-  }
+const openWorkoutSessionDetail = (session: WorkoutSessionResponse) => {
+  router.push(session.templateId ? `/workouts/${session.templateId}` : '/workouts');
 };
 
 const closeEventModal = () => {

@@ -26,7 +26,7 @@
           :description="template.description"
           :count="countSteps(template)"
           :groups="template.blocks?.length ?? 0"
-          :duration-seconds="template.estimatedDurationSeconds"
+          :duration-seconds="estimateWorkoutTemplateSeconds(template)"
         >
           <div class="workout-card__footer">
             <span v-if="template.updatedAt">Aggiornata {{ formatDate(template.updatedAt) }}</span>
@@ -46,6 +46,7 @@ import AppLayout from '@/components/AppLayout.vue';
 import WorkoutCard from '@/components/WorkoutCard.vue';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import type { WorkoutTemplateResponse } from '@/types/api';
+import { estimateWorkoutTemplateSeconds } from '@/utils/workoutDuration';
 
 const workouts = useWorkoutStore();
 const query = ref('');

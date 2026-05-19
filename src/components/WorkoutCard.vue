@@ -16,6 +16,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { formatWorkoutDuration } from '@/utils/workoutDuration';
 
 const props = defineProps<{
   title: string;
@@ -27,9 +28,7 @@ const props = defineProps<{
 }>();
 
 const durationLabel = computed(() => {
-  const total = props.durationSeconds ?? 0;
-  if (!total) return 'Durata n/d';
-  const minutes = Math.max(1, Math.round(total / 60));
-  return `${minutes} min`;
+  const label = formatWorkoutDuration(props.durationSeconds);
+  return label === '--' ? 'Durata --' : label;
 });
 </script>

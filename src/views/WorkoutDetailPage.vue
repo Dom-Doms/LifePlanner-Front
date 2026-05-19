@@ -60,6 +60,7 @@ import { flattenWorkoutTemplate } from '@/composables/useWorkoutRunner';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import type { WorkoutStepDto, WorkoutTemplateResponse } from '@/types/api';
 import { getErrorMessage } from '@/utils/errorMessage';
+import { estimateWorkoutTemplateSeconds, formatWorkoutDuration } from '@/utils/workoutDuration';
 
 const route = useRoute();
 const router = useRouter();
@@ -72,8 +73,8 @@ const error = ref('');
 const sequence = computed(() => (template.value ? flattenWorkoutTemplate(template.value) : []));
 const topSteps = computed(() => template.value?.steps?.length ? template.value.steps : (!template.value?.blocks?.length ? sequence.value : []));
 const durationLabel = computed(() => {
-  const seconds = template.value?.estimatedDurationSeconds || sequence.value.reduce((sum, step) => sum + (step.durationSeconds ?? 0), 0);
-  return `${Math.max(1, Math.round(seconds / 60))} min`;
+  const seconds = template.value ? estimateWorkoutTemplateSeconds(template.value) : 0;
+  return formatWorkoutDuration(seconds);
 });
 
 const stepLabel = (step: WorkoutStepDto) => {
