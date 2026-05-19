@@ -25,13 +25,13 @@
 
     <DayTimeline :date="date" :events="planning.events" @select="openSelectedEventModal" />
 
-    <section v-if="workouts.daySessions.length" class="panel">
+    <section v-if="visibleDaySessions.length" class="panel">
       <div class="panel__header">
         <h2>Dettaglio allenamento</h2>
         <RouterLink to="/workouts">Apri</RouterLink>
       </div>
       <button
-        v-for="session in workouts.daySessions"
+        v-for="session in visibleDaySessions"
         :key="session.id"
         class="workout-card-link workout-card-button"
         type="button"
@@ -106,6 +106,14 @@ const eventFormFieldErrors = ref<Record<string, string | string[]>>({});
 
 const date = computed(() => (route.params.date as string | undefined) ?? todayIso());
 const plan = computed(() => planning.currentPlan);
+const visibleDaySessions = computed(() => {
+  const linkedSessionIds = new Set(
+    planning.events
+      .filter((event) => event.type === 'WORKOUT' && event.workoutSessionId != null)
+      .map((event) => event.workoutSessionId),
+  );
+  return workouts.daySessions.filter((session) => session.templateId != null && linkedSessionIds.has(session.id));
+});
 
 const load = async () => {
   await Promise.all([planning.loadDay(date.value), workouts.loadTemplates(), workouts.loadDaySessions(date.value)]);
