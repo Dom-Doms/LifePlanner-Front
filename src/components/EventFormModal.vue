@@ -136,6 +136,7 @@
         <section v-if="isSavedWorkoutEvent" class="sub-panel">
           <strong>Allenamento collegato</strong>
           <p class="empty-state">{{ linkedWorkoutLabel }}</p>
+          <p v-if="completedLabel" class="workout-completed-note">{{ completedLabel }}</p>
           <RouterLink
             v-if="draft.workoutTemplateId"
             class="secondary-btn secondary-btn--full"
@@ -224,6 +225,13 @@ const linkedWorkoutLabel = computed(() => {
   if (template) return template.name;
   if (draft.workoutSessionId) return `Sessione allenamento #${draft.workoutSessionId}`;
   return 'Scheda allenamento non disponibile';
+});
+const completedLabel = computed(() => {
+  if (!isSavedWorkoutEvent.value || !props.event?.completed) return '';
+  if (!props.event.completedAt) return 'Allenamento completato';
+  const completedAt = new Date(props.event.completedAt);
+  if (Number.isNaN(completedAt.getTime())) return 'Allenamento completato';
+  return `Allenamento completato il ${new Intl.DateTimeFormat('it-IT', { dateStyle: 'short', timeStyle: 'short' }).format(completedAt)}`;
 });
 const showNoResults = computed(() => userQuery.value.length >= 2 && searchDone.value && !userResults.value.length && !searchError.value);
 const reminderValues = new Set([0, 10, 30, 60, 1440]);

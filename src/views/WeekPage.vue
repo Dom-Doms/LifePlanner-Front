@@ -43,8 +43,14 @@
         <ul v-if="eventsByDate(day).length" class="week-event-list">
           <li v-for="event in eventsByDate(day).slice(0, 3)" :key="event.id">
             <span>{{ event.allDay ? 'Tutto il giorno' : event.startTime?.slice(0, 5) }}</span>
-            <button class="week-event-button" type="button" @click.stop="openSelectedEventModal(event)">
-              {{ event.title }}
+            <button
+              class="week-event-button"
+              :class="{ 'week-event-button--completed': event.type === 'WORKOUT' && event.completed }"
+              type="button"
+              @click.stop="openSelectedEventModal(event)"
+            >
+              <span>{{ event.title }}</span>
+              <small v-if="event.type === 'WORKOUT' && event.completed">Completato</small>
             </button>
           </li>
         </ul>

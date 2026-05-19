@@ -10,9 +10,17 @@
       </div>
     </div>
     <div v-if="allDayEvents.length" class="all-day">
-      <button v-for="event in allDayEvents" :key="event.id" class="event-card event-card--button event-card--all-day" type="button" @click="$emit('select', event)">
+      <button
+        v-for="event in allDayEvents"
+        :key="event.id"
+        class="event-card event-card--button event-card--all-day"
+        :class="{ 'event-card--completed': event.type === 'WORKOUT' && event.completed }"
+        type="button"
+        @click="$emit('select', event)"
+      >
         <strong>{{ event.title }}</strong>
         <small>Tutto il giorno</small>
+        <small v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-badge">Completato</small>
       </button>
     </div>
     <p v-if="!events.length" class="timeline-empty-state">Nessun evento per questa giornata.</p>
@@ -47,10 +55,16 @@
             width: `calc(${event.widthPercent}% - 4px)`,
           }"
         >
-          <button class="event-card event-card--button timeline-event-card" type="button" @click="$emit('select', event)">
+          <button
+            class="event-card event-card--button timeline-event-card"
+            :class="{ 'event-card--completed': event.type === 'WORKOUT' && event.completed }"
+            type="button"
+            @click="$emit('select', event)"
+          >
             <strong>{{ event.title }}</strong>
             <small class="timeline-event-time">{{ event.startTime?.slice(0, 5) }}<span v-if="event.endTime"> - {{ event.endTime.slice(0, 5) }}</span></small>
             <small>{{ labelFor(event.type) }}<span v-if="event.location"> - {{ event.location }}</span></small>
+            <small v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-badge">Completato</small>
             <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
           </button>
         </article>

@@ -635,6 +635,28 @@ textarea {
   margin: 0;
 }
 
+.event-card--completed {
+  border: 1px solid color-mix(in srgb, var(--app-success) 56%, var(--app-border));
+  border-color: color-mix(in srgb, var(--app-success) 42%, var(--app-border));
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--app-success) 10%, transparent), color-mix(in srgb, var(--app-success) 10%, transparent)),
+    var(--app-surface-subtle);
+  box-shadow: inset 3px 0 0 var(--app-success);
+}
+
+.event-completed-badge,
+.workout-completed-badge,
+.workout-completed-note {
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--app-success) 44%, var(--app-border));
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--app-success) 12%, var(--app-surface));
+  color: var(--app-success);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .workout-card,
 .day-card {
   padding: 14px;
@@ -656,6 +678,8 @@ textarea {
   color: inherit;
   text-align: left;
   cursor: pointer;
+  display: grid;
+  gap: 8px;
 }
 
 .workout-card--rich {
@@ -1227,6 +1251,28 @@ textarea {
   text-align: left;
   overflow-wrap: anywhere;
   cursor: pointer;
+  display: grid;
+  gap: 2px;
+}
+
+.week-event-button span {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.week-event-button small {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--app-success) 12%, var(--app-surface));
+  color: var(--app-success);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.week-event-button--completed {
+  color: var(--app-success);
 }
 
 .week-more {
@@ -1301,6 +1347,10 @@ textarea {
 
 .gym-dot {
   background: var(--app-success);
+}
+
+.gym-dot--completed {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-success) 20%, transparent);
 }
 
 .day-indicators,

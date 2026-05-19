@@ -96,10 +96,12 @@ export interface CalendarEventResponse {
   reminderEnabled: boolean;
   reminderMinutesBefore?: number | null;
   reminderSentAt?: string | null;
+  completed?: boolean | null;
+  completedAt?: string | null;
   participants: ParticipantDto[];
 }
 
-export type CalendarEventRequest = Omit<CalendarEventResponse, 'id' | 'reminderSentAt'>;
+export type CalendarEventRequest = Omit<CalendarEventResponse, 'id' | 'reminderSentAt' | 'completed' | 'completedAt'>;
 
 export interface WorkoutExerciseDto {
   id?: number | null;

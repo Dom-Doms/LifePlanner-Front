@@ -25,23 +25,25 @@
 
     <DayTimeline :date="date" :events="planning.events" @select="openSelectedEventModal" />
 
-    <section v-if="visibleDaySessions.length" class="panel">
+    <section v-if="visibleDayWorkoutCards.length" class="panel">
       <div class="panel__header">
         <h2>Dettaglio allenamento</h2>
         <RouterLink to="/workouts">Apri</RouterLink>
       </div>
       <button
-        v-for="session in visibleDaySessions"
-        :key="session.id"
+        v-for="card in visibleDayWorkoutCards"
+        :key="card.session.id"
         class="workout-card-link workout-card-button"
         type="button"
-        @click="openWorkoutSessionDetail(session)"
+        @click="openWorkoutSessionDetail(card)"
       >
         <WorkoutCard
-          :title="session.title"
-          :description="session.participants.map((p) => p.displayName).join(', ')"
-          :count="session.exercises.length"
+          :title="card.template?.name ?? card.session.title"
+          :description="workoutCardDescription(card)"
+          :count="workoutCardStepCount(card)"
+          :duration-seconds="card.template ? estimateWorkoutTemplateSeconds(card.template) : null"
         />
+        <span v-if="card.event.completed" class="workout-completed-badge">Completato</span>
       </button>
     </section>
     <EventFormModal
@@ -88,9 +90,16 @@ import EventFormModal from '@/components/EventFormModal.vue';
 import WorkoutCard from '@/components/WorkoutCard.vue';
 import { usePlanningStore } from '@/stores/planningStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
-import type { CalendarEventRequest, CalendarEventResponse, DayContextRequest, RecurrenceType, WorkoutSessionResponse } from '@/types/api';
+import type { CalendarEventRequest, CalendarEventResponse, DayContextRequest, RecurrenceType, WorkoutSessionResponse, WorkoutTemplateResponse } from '@/types/api';
 import { formatDate, todayIso } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errorMessage';
+import { estimateWorkoutTemplateSeconds } from '@/utils/workoutDuration';
+
+interface DayWorkoutCard {
+  event: CalendarEventResponse;
+  session: WorkoutSessionResponse;
+  template?: WorkoutTemplateResponse;
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -106,13 +115,20 @@ const eventFormFieldErrors = ref<Record<string, string | string[]>>({});
 
 const date = computed(() => (route.params.date as string | undefined) ?? todayIso());
 const plan = computed(() => planning.currentPlan);
-const visibleDaySessions = computed(() => {
-  const linkedSessionIds = new Set(
-    planning.events
-      .filter((event) => event.type === 'WORKOUT' && event.workoutSessionId != null)
-      .map((event) => event.workoutSessionId),
-  );
-  return workouts.daySessions.filter((session) => session.templateId != null && linkedSessionIds.has(session.id));
+const visibleDayWorkoutCards = computed<DayWorkoutCard[]>(() => {
+  const sessionsById = new Map(workouts.daySessions.map((session) => [session.id, session]));
+  return planning.events.reduce<DayWorkoutCard[]>((cards, event) => {
+    if (event.type !== 'WORKOUT' || event.workoutSessionId == null) {
+      return cards;
+    }
+    const session = sessionsById.get(event.workoutSessionId);
+    if (session) {
+      const templateId = event.workoutTemplateId ?? session.templateId;
+      const template = workouts.templates.find((item) => item.id === templateId);
+      cards.push({ event, session, template });
+    }
+    return cards;
+  }, []);
 });
 
 const load = async () => {
@@ -139,8 +155,23 @@ const openSelectedEventModal = (event: CalendarEventResponse) => {
   selectedEvent.value = event;
 };
 
-const openWorkoutSessionDetail = (session: WorkoutSessionResponse) => {
-  router.push(session.templateId ? `/workouts/${session.templateId}` : '/workouts');
+const workoutCardStepCount = (card: DayWorkoutCard) => {
+  const template = card.template;
+  if (!template) return card.session.exercises.length;
+  const advancedCount = (template.steps?.length ?? 0) + (template.blocks ?? []).reduce((sum, block) => sum + block.steps.length, 0);
+  return advancedCount || template.exercises.length;
+};
+
+const workoutCardDescription = (card: DayWorkoutCard) => {
+  if (!card.template) return 'Scheda non disponibile';
+  if (card.event.completed) return 'Allenamento completato';
+  return card.session.participants.map((participant) => participant.displayName).join(', ') || card.template.description || '';
+};
+
+const openWorkoutSessionDetail = (card: DayWorkoutCard) => {
+  const templateId = card.template?.id ?? card.session.templateId;
+  if (!templateId) return;
+  router.push({ path: `/workouts/${templateId}`, query: { workoutSessionId: String(card.session.id), eventDate: card.event.eventDate } });
 };
 
 const closeEventModal = () => {

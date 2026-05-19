@@ -62,17 +62,24 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useWorkoutRunner } from '@/composables/useWorkoutRunner';
+import { usePlanningStore } from '@/stores/planningStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import { getErrorMessage } from '@/utils/errorMessage';
 
 const route = useRoute();
 const router = useRouter();
+const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const { activeRun } = storeToRefs(workouts);
 const runner = useWorkoutRunner(activeRun);
 const run = computed(() => activeRun.value);
 const showList = ref(false);
 const saveInterval = ref<number | undefined>();
+const eventDate = computed(() => {
+  const raw = route.query.eventDate;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value || null;
+});
 
 const persistState = async () => {
   if (!run.value || runner.isFinished.value) return;
@@ -109,6 +116,9 @@ const complete = async () => {
   if (!run.value) return;
   runner.complete();
   await workouts.completeRun(run.value.id, runner.snapshot());
+  if (eventDate.value) {
+    await planning.loadDay(eventDate.value);
+  }
 };
 
 const cancel = async () => {

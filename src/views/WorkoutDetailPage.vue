@@ -72,6 +72,17 @@ const error = ref('');
 
 const sequence = computed(() => (template.value ? flattenWorkoutTemplate(template.value) : []));
 const topSteps = computed(() => template.value?.steps?.length ? template.value.steps : (!template.value?.blocks?.length ? sequence.value : []));
+const workoutSessionId = computed(() => {
+  const raw = route.query.workoutSessionId;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+});
+const eventDate = computed(() => {
+  const raw = route.query.eventDate;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value || null;
+});
 const durationLabel = computed(() => {
   const seconds = template.value ? estimateWorkoutTemplateSeconds(template.value) : 0;
   return formatWorkoutDuration(seconds);
@@ -93,8 +104,8 @@ const start = async () => {
   if (!template.value) return;
   try {
     starting.value = true;
-    const run = await workouts.startRun(template.value.id);
-    await router.push(`/workout-runs/${run.id}`);
+    const run = await workouts.startRun(template.value.id, workoutSessionId.value);
+    await router.push({ path: `/workout-runs/${run.id}`, query: eventDate.value ? { eventDate: eventDate.value } : undefined });
   } catch (err) {
     error.value = getErrorMessage(err);
   } finally {
