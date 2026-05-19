@@ -3,32 +3,39 @@
     <section class="page-header page-header--row">
       <div>
         <h1>Allenamento</h1>
-        <p>Schede riutilizzabili e sessioni giornaliere.</p>
+        <p>Schede riutilizzabili e sessioni giornaliere</p>
       </div>
       <RouterLink class="icon-btn" to="/workouts/new">+</RouterLink>
     </section>
 
-    <section class="panel">
-      <input v-model.trim="query" type="search" placeholder="Cerca allenamento, descrizione o gruppo muscolare" />
+    <section class="panel workout-search-panel">
+      <input v-model.trim="query" type="search" placeholder="Cerca scheda, descrizione, esercizio" />
       <p v-if="feedback" class="success-text">{{ feedback }}</p>
       <p v-if="error" class="error-text">{{ error }}</p>
     </section>
 
     <section class="workout-list">
-      <WorkoutCard
+      <RouterLink
         v-for="template in filteredTemplates"
         :key="template.id"
-        :title="template.name"
-        :description="template.description"
-        :count="template.exercises.length"
+        :to="`/workouts/${template.id}`"
+        class="workout-card-link"
       >
-        <div class="card-actions">
-          <RouterLink class="secondary-btn" :to="`/workouts/${template.id}`">Modifica</RouterLink>
-          <button class="secondary-btn" type="button" @click="assignToday(template.id)">Oggi</button>
-          <button class="danger-btn" type="button" @click="removeTemplate(template.id)">Elimina</button>
-        </div>
-      </WorkoutCard>
-      <p v-if="!filteredTemplates.length" class="empty-state">Nessuna scheda presente.</p>
+        <WorkoutCard
+          :title="template.name"
+          :description="template.description"
+          :count="countSteps(template)"
+          :groups="template.blocks?.length ?? 0"
+          :duration-seconds="estimateWorkoutTemplateSeconds(template)"
+        >
+          <div class="workout-card__footer">
+            <span v-if="template.updatedAt">Aggiornata {{ formatDate(template.updatedAt) }}</span>
+            <span v-else>Pronta da usare</span>
+            <strong>Apri</strong>
+          </div>
+        </WorkoutCard>
+      </RouterLink>
+      <p v-if="!filteredTemplates.length" class="empty-state">Nessuna scheda presente. Crea la prima con il pulsante +.</p>
     </section>
   </AppLayout>
 </template>
@@ -38,8 +45,8 @@ import { computed, onMounted, ref } from 'vue';
 import AppLayout from '@/components/AppLayout.vue';
 import WorkoutCard from '@/components/WorkoutCard.vue';
 import { useWorkoutStore } from '@/stores/workoutStore';
-import { todayIso } from '@/utils/date';
-import { getErrorMessage } from '@/utils/errorMessage';
+import type { WorkoutTemplateResponse } from '@/types/api';
+import { estimateWorkoutTemplateSeconds } from '@/utils/workoutDuration';
 
 const workouts = useWorkoutStore();
 const query = ref('');
@@ -49,31 +56,30 @@ const error = ref('');
 const filteredTemplates = computed(() => {
   const needle = query.value.toLowerCase();
   if (!needle) return workouts.templates;
-  return workouts.templates.filter((template) => {
-    const exerciseText = template.exercises.map((exercise) => `${exercise.name} ${exercise.muscleGroup ?? ''}`).join(' ');
-    return `${template.name} ${template.description ?? ''} ${exerciseText}`.toLowerCase().includes(needle);
-  });
+  return workouts.templates.filter((template) => searchableText(template).includes(needle));
 });
 
-const assignToday = async (templateId: number) => {
-  try {
-    await workouts.assignFromTemplate({ templateId, date: todayIso(), title: null, notes: '', participants: [] });
-    feedback.value = 'Allenamento aggiunto a oggi.';
-    error.value = '';
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  }
+const searchableText = (template: WorkoutTemplateResponse) => {
+  const legacy = template.exercises.map((exercise) => `${exercise.name} ${exercise.muscleGroup ?? ''}`).join(' ');
+  const blocks = (template.blocks ?? [])
+    .map((block) => `${block.title} ${block.steps.map((step) => step.name).join(' ')}`)
+    .join(' ');
+  const steps = (template.steps ?? []).map((step) => step.name).join(' ');
+  return `${template.name} ${template.description ?? ''} ${legacy} ${blocks} ${steps}`.toLowerCase();
 };
 
-const removeTemplate = async (templateId: number) => {
-  try {
-    await workouts.removeTemplate(templateId);
-    feedback.value = 'Allenamento archiviato o eliminato correttamente.';
-    error.value = '';
-  } catch (err) {
-    error.value = getErrorMessage(err) || 'Non puoi eliminare questo allenamento perche e gia presente in una o piu giornate.';
-  }
+const countSteps = (template: WorkoutTemplateResponse) => {
+  const advancedCount = (template.steps?.length ?? 0) + (template.blocks ?? []).reduce((sum, block) => sum + block.steps.length, 0);
+  return advancedCount || template.exercises.length;
 };
 
-onMounted(workouts.loadTemplates);
+const formatDate = (value: string) => new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short' }).format(new Date(value));
+
+onMounted(async () => {
+  try {
+    await workouts.loadTemplates();
+  } catch (err) {
+    error.value = 'Non riesco a caricare le schede allenamento.';
+  }
+});
 </script>

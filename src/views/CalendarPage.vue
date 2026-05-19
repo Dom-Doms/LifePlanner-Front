@@ -21,7 +21,11 @@
         <small v-if="planByDate(day)?.context">{{ planByDate(day)?.context?.label }}</small>
         <span class="day-indicators">
           <span v-if="eventsByDate(day).length" class="dot"></span>
-          <span v-if="workoutsByDate(day).length" class="gym-dot"></span>
+          <span
+            v-if="workoutsByDate(day).length"
+            class="gym-dot"
+            :class="{ 'gym-dot--completed': workoutsByDate(day).some((event) => event.type === 'WORKOUT' && event.completed) }"
+          ></span>
         </span>
       </RouterLink>
     </section>

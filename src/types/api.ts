@@ -96,10 +96,12 @@ export interface CalendarEventResponse {
   reminderEnabled: boolean;
   reminderMinutesBefore?: number | null;
   reminderSentAt?: string | null;
+  completed?: boolean | null;
+  completedAt?: string | null;
   participants: ParticipantDto[];
 }
 
-export type CalendarEventRequest = Omit<CalendarEventResponse, 'id' | 'reminderSentAt'>;
+export type CalendarEventRequest = Omit<CalendarEventResponse, 'id' | 'reminderSentAt' | 'completed' | 'completedAt'>;
 
 export interface WorkoutExerciseDto {
   id?: number | null;
@@ -113,18 +115,55 @@ export interface WorkoutExerciseDto {
   exerciseOrder: number;
 }
 
+export type WorkoutStepType = 'ACTIVE' | 'BREAK';
+export type WorkoutMeasurementType = 'TIME' | 'REPS';
+export type WorkoutRunStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+
+export interface WorkoutStepDto {
+  id?: number | null;
+  blockId?: number | null;
+  name: string;
+  description?: string | null;
+  stepType: WorkoutStepType;
+  measurementType: WorkoutMeasurementType;
+  durationSeconds?: number | null;
+  reps?: number | null;
+  sortOrder: number;
+  color?: string | null;
+  intensity?: string | null;
+  active?: boolean | null;
+}
+
+export interface WorkoutBlockDto {
+  id?: number | null;
+  title: string;
+  sortOrder: number;
+  repeatCount: number;
+  color?: string | null;
+  collapsed?: boolean | null;
+  steps: WorkoutStepDto[];
+}
+
 export interface WorkoutTemplateResponse {
   id: number;
   name: string;
   description?: string | null;
   active: boolean;
+  estimatedDurationSeconds?: number | null;
   exercises: WorkoutExerciseDto[];
+  blocks?: WorkoutBlockDto[];
+  steps?: WorkoutStepDto[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface WorkoutTemplateRequest {
   name: string;
   description?: string | null;
+  estimatedDurationSeconds?: number | null;
   exercises: WorkoutExerciseDto[];
+  blocks?: WorkoutBlockDto[];
+  steps?: WorkoutStepDto[];
 }
 
 export interface WorkoutParticipantDto {
@@ -174,4 +213,31 @@ export interface WorkoutFromTemplateRequest {
   title?: string | null;
   notes?: string | null;
   participants: WorkoutParticipantDto[];
+}
+
+export interface WorkoutRunStateRequest {
+  status?: WorkoutRunStatus | null;
+  elapsedSeconds?: number | null;
+  currentStepIndex?: number | null;
+  currentBlockIndex?: number | null;
+  currentLap?: number | null;
+  snapshotJson?: string | null;
+}
+
+export interface WorkoutRunResponse {
+  id: number;
+  templateId: number;
+  relatedWorkoutSessionId?: number | null;
+  status: WorkoutRunStatus;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  pausedAt?: string | null;
+  elapsedSeconds: number;
+  currentStepIndex: number;
+  currentBlockIndex: number;
+  currentLap: number;
+  snapshotJson?: string | null;
+  template: WorkoutTemplateResponse;
+  createdAt: string;
+  updatedAt: string;
 }

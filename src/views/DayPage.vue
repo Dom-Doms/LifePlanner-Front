@@ -25,18 +25,29 @@
 
     <DayTimeline :date="date" :events="planning.events" @select="openSelectedEventModal" />
 
-    <section v-if="workouts.daySessions.length" class="panel">
+    <section v-if="visibleDayWorkoutCards.length" class="panel">
       <div class="panel__header">
         <h2>Dettaglio allenamento</h2>
         <RouterLink to="/workouts">Apri</RouterLink>
       </div>
-      <WorkoutCard
-        v-for="session in workouts.daySessions"
-        :key="session.id"
-        :title="session.title"
-        :description="session.participants.map((p) => p.displayName).join(', ')"
-        :count="session.exercises.length"
-      />
+      <button
+        v-for="card in visibleDayWorkoutCards"
+        :key="card.session.id"
+        class="workout-card-link workout-card-button"
+        type="button"
+        @click="openWorkoutSessionDetail(card)"
+      >
+        <WorkoutCard
+          :title="card.template?.name ?? card.session.title"
+          :description="workoutCardDescription(card)"
+          :count="workoutCardStepCount(card)"
+          :duration-seconds="card.template ? estimateWorkoutTemplateSeconds(card.template) : null"
+        >
+          <template #meta>
+            <span v-if="card.event.completed" class="workout-completed-badge">✓ Completato</span>
+          </template>
+        </WorkoutCard>
+      </button>
     </section>
     <EventFormModal
       v-if="eventOpen"
@@ -74,7 +85,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import axios from 'axios';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ContextSelector from '@/components/ContextSelector.vue';
 import DayTimeline from '@/components/DayTimeline.vue';
@@ -82,11 +93,19 @@ import EventFormModal from '@/components/EventFormModal.vue';
 import WorkoutCard from '@/components/WorkoutCard.vue';
 import { usePlanningStore } from '@/stores/planningStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
-import type { CalendarEventRequest, CalendarEventResponse, DayContextRequest, RecurrenceType } from '@/types/api';
+import type { CalendarEventRequest, CalendarEventResponse, DayContextRequest, RecurrenceType, WorkoutSessionResponse, WorkoutTemplateResponse } from '@/types/api';
 import { formatDate, todayIso } from '@/utils/date';
 import { getErrorMessage } from '@/utils/errorMessage';
+import { estimateWorkoutTemplateSeconds } from '@/utils/workoutDuration';
+
+interface DayWorkoutCard {
+  event: CalendarEventResponse;
+  session: WorkoutSessionResponse;
+  template?: WorkoutTemplateResponse;
+}
 
 const route = useRoute();
+const router = useRouter();
 const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const eventOpen = ref(false);
@@ -99,6 +118,21 @@ const eventFormFieldErrors = ref<Record<string, string | string[]>>({});
 
 const date = computed(() => (route.params.date as string | undefined) ?? todayIso());
 const plan = computed(() => planning.currentPlan);
+const visibleDayWorkoutCards = computed<DayWorkoutCard[]>(() => {
+  const sessionsById = new Map(workouts.daySessions.map((session) => [session.id, session]));
+  return planning.events.reduce<DayWorkoutCard[]>((cards, event) => {
+    if (event.type !== 'WORKOUT' || event.workoutSessionId == null) {
+      return cards;
+    }
+    const session = sessionsById.get(event.workoutSessionId);
+    if (session) {
+      const templateId = event.workoutTemplateId ?? session.templateId;
+      const template = workouts.templates.find((item) => item.id === templateId);
+      cards.push({ event, session, template });
+    }
+    return cards;
+  }, []);
+});
 
 const load = async () => {
   await Promise.all([planning.loadDay(date.value), workouts.loadTemplates(), workouts.loadDaySessions(date.value)]);
@@ -122,6 +156,24 @@ const openWorkoutModal = () => {
 const openSelectedEventModal = (event: CalendarEventResponse) => {
   clearEventFormErrors();
   selectedEvent.value = event;
+};
+
+const workoutCardStepCount = (card: DayWorkoutCard) => {
+  const template = card.template;
+  if (!template) return card.session.exercises.length;
+  const advancedCount = (template.steps?.length ?? 0) + (template.blocks ?? []).reduce((sum, block) => sum + block.steps.length, 0);
+  return advancedCount || template.exercises.length;
+};
+
+const workoutCardDescription = (card: DayWorkoutCard) => {
+  if (!card.template) return 'Scheda non disponibile';
+  return card.session.participants.map((participant) => participant.displayName).join(', ') || card.template.description || '';
+};
+
+const openWorkoutSessionDetail = (card: DayWorkoutCard) => {
+  const templateId = card.template?.id ?? card.session.templateId;
+  if (!templateId) return;
+  router.push({ path: `/workouts/${templateId}`, query: { workoutSessionId: String(card.session.id), eventDate: card.event.eventDate } });
 };
 
 const closeEventModal = () => {
