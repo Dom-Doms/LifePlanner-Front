@@ -5,15 +5,16 @@
         <button class="icon-btn icon-btn--light" type="button" @click="cancel">x</button>
         <div>
           <strong>{{ formatSeconds(runner.elapsedTime.value) }}</strong>
-          <small>elapsed</small>
+          <small>tempo</small>
         </div>
         <button class="secondary-btn" type="button" @click="showList = !showList">Lista</button>
       </header>
 
       <section v-if="runner.currentStep.value" class="workout-run__main" :class="`workout-run__main--${runner.currentStep.value.stepType.toLowerCase()}`">
-        <p v-if="runner.currentStep.value.blockTitle">
-          {{ runner.currentStep.value.blockTitle }} · lap {{ runner.currentStep.value.lap }}/{{ runner.currentStep.value.totalLaps }}
-        </p>
+        <div v-if="runner.currentStep.value.blockTitle" class="workout-run__set-chip">
+          <strong>Serie {{ runner.currentStep.value.lap }}/{{ runner.currentStep.value.totalLaps }}</strong>
+          <span>Gruppo: {{ runner.currentStep.value.blockTitle }}</span>
+        </div>
         <h1>{{ runner.currentStep.value.name }}</h1>
         <div class="progress-ring" :style="{ '--progress': `${runner.progress.value}%` }">
           <div>
@@ -22,8 +23,8 @@
             <small>{{ runner.currentStep.value.stepType === 'BREAK' ? 'recupero' : 'work' }}</small>
           </div>
         </div>
-        <p v-if="runner.nextStep.value" class="next-up">Next up: {{ runner.nextStep.value.name }}</p>
-        <p class="next-up">{{ runner.completedSteps.value }} / {{ runner.sequence.value.length }} step</p>
+        <p v-if="runner.nextStep.value" class="next-up">Prossimo: {{ runner.nextStep.value.name }}</p>
+        <p class="next-up">{{ runner.completedSteps.value }} / {{ runner.sequence.value.length }} step - {{ remainingSteps }} mancanti</p>
       </section>
 
       <section v-if="runner.isFinished.value" class="workout-run-summary">
@@ -40,13 +41,16 @@
           class="workout-run-list__item"
         >
           <span>{{ index + 1 }}</span>
-          <strong>{{ step.name }}</strong>
+          <strong>
+            {{ step.name }}
+            <small v-if="step.blockTitle">Serie {{ step.lap }}/{{ step.totalLaps }}</small>
+          </strong>
           <small>{{ step.measurementType === 'REPS' ? `x${step.reps}` : formatSeconds(step.durationSeconds ?? 0) }}</small>
         </div>
       </section>
 
       <footer class="workout-run-controls">
-        <button class="secondary-btn" type="button" @click="previous">Prev</button>
+        <button class="secondary-btn" type="button" @click="previous">Indietro</button>
         <button class="primary-btn" type="button" @click="togglePause">{{ runner.isPaused.value ? 'Riprendi' : 'Pausa' }}</button>
         <button v-if="runner.currentStep.value?.measurementType === 'REPS'" class="primary-btn" type="button" @click="completeStep">Completato</button>
         <button v-else class="secondary-btn" type="button" @click="skip">Skip</button>
@@ -75,6 +79,7 @@ const runner = useWorkoutRunner(activeRun);
 const run = computed(() => activeRun.value);
 const showList = ref(false);
 const saveInterval = ref<number | undefined>();
+const remainingSteps = computed(() => Math.max(0, runner.sequence.value.length - runner.currentIndex.value - 1));
 const eventDate = computed(() => {
   const raw = route.query.eventDate;
   const value = Array.isArray(raw) ? raw[0] : raw;

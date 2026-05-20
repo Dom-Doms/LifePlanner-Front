@@ -17,40 +17,50 @@
     </section>
 
     <section class="workout-builder">
-      <article v-for="(step, index) in draft.steps" :key="`s-${index}`" class="workout-step-row" :class="`workout-step-row--${step.stepType.toLowerCase()}`">
-        <button type="button" @click="editTopStep(index)">
-          <strong>{{ step.name }}</strong>
-          <span>{{ stepLabel(step) }}</span>
-        </button>
-        <button class="danger-btn" type="button" @click="draft.steps?.splice(index, 1)">Rimuovi</button>
-      </article>
+      <template v-for="item in orderedDraftItems" :key="`${item.type}-${item.index}`">
+        <article
+          v-if="item.type === 'step'"
+          class="workout-step-row"
+          :class="`workout-step-row--${item.step.stepType.toLowerCase()}`"
+        >
+          <button type="button" @click="editTopStep(item.index)">
+            <strong>{{ item.step.name }}</strong>
+            <span>{{ stepLabel(item.step) }}</span>
+          </button>
+          <button class="danger-btn" type="button" @click="removeTopStep(item.index)">Rimuovi</button>
+        </article>
 
-      <article v-for="(block, blockIndex) in draft.blocks" :key="`b-${blockIndex}`" class="workout-block-editor">
+        <article v-else class="workout-block-editor">
         <div class="workout-block-editor__header">
-          <input v-model.trim="block.title" placeholder="Titolo gruppo" />
+          <div>
+            <input v-model.trim="item.block.title" placeholder="Titolo gruppo" />
+            <small>{{ formatWorkoutDuration(estimateWorkoutBlockSeconds(item.block)) }}</small>
+          </div>
           <label>
-            <span>Lap</span>
-            <input v-model.number="block.repeatCount" type="number" min="1" />
+            <span>Serie</span>
+            <input v-model.number="item.block.repeatCount" type="number" min="1" max="99" />
           </label>
         </div>
+        <p class="workout-block-editor__meta">x{{ normalizedRepeatCount(item.block.repeatCount) }} serie</p>
         <div class="workout-block-editor__steps">
           <button
-            v-for="(step, stepIndex) in block.steps"
-            :key="`b-${blockIndex}-s-${stepIndex}`"
+            v-for="(step, stepIndex) in item.block.steps"
+            :key="`b-${item.index}-s-${stepIndex}`"
             type="button"
             class="workout-step-pill"
-            @click="editBlockStep(blockIndex, stepIndex)"
+            @click="editBlockStep(item.index, stepIndex)"
           >
             <strong>{{ step.name }}</strong>
             <span>{{ stepLabel(step) }}</span>
           </button>
         </div>
         <div class="card-actions card-actions--wrap">
-          <button class="secondary-btn" type="button" @click="addStepToBlock(blockIndex, 'ACTIVE')">+ Esercizio</button>
-          <button class="secondary-btn" type="button" @click="addStepToBlock(blockIndex, 'BREAK')">+ Recupero</button>
-          <button class="danger-btn" type="button" @click="draft.blocks?.splice(blockIndex, 1)">Rimuovi gruppo</button>
+          <button class="secondary-btn" type="button" @click="addStepToBlock(item.index, 'ACTIVE')">+ Esercizio</button>
+          <button class="secondary-btn" type="button" @click="addStepToBlock(item.index, 'BREAK')">+ Recupero</button>
+          <button class="danger-btn" type="button" @click="removeBlock(item.index)">Rimuovi gruppo</button>
         </div>
       </article>
+      </template>
 
       <p v-if="!stepCount" class="empty-state">Scheda vuota. Aggiungi esercizi, recuperi o un gruppo.</p>
       <p v-if="error" class="form-alert">{{ error }}</p>
@@ -120,6 +130,9 @@ import { estimateWorkoutBlockSeconds, estimateWorkoutStepSeconds, formatWorkoutD
 
 type EditingTarget = { blockIndex: number | null; stepIndex: number | null; step: WorkoutStepDto; order: number };
 type QuickBreakTarget = { blockIndex: number | null; minutes: number; seconds: number; error: string };
+type DraftItem =
+  | { type: 'step'; index: number; sortOrder: number; step: WorkoutStepDto }
+  | { type: 'block'; index: number; sortOrder: number; block: WorkoutBlockDto };
 
 const route = useRoute();
 const router = useRouter();
@@ -157,9 +170,17 @@ const estimatedDuration = computed(() => {
   return top + grouped;
 });
 const durationLabel = computed(() => formatWorkoutDuration(estimatedDuration.value));
+const orderedDraftItems = computed<DraftItem[]>(() => [
+  ...(draft.steps ?? []).map((step, index) => ({ type: 'step' as const, index, sortOrder: step.sortOrder, step })),
+  ...(draft.blocks ?? []).map((block, index) => ({ type: 'block' as const, index, sortOrder: block.sortOrder, block })),
+].sort((a, b) => a.sortOrder - b.sortOrder));
+
+const nextGlobalOrder = () => orderedDraftItems.value.length;
+
+const normalizedRepeatCount = (value?: number | null) => Math.min(99, Math.max(1, Number(value) || 1));
 
 const makeStep = (type: WorkoutStepType, order: number): WorkoutStepDto => ({
-  name: type === 'BREAK' ? 'Break' : '',
+  name: type === 'BREAK' ? 'Recupero' : '',
   description: '',
   stepType: type,
   measurementType: type === 'BREAK' ? 'TIME' : 'REPS',
@@ -172,14 +193,11 @@ const makeStep = (type: WorkoutStepType, order: number): WorkoutStepDto => ({
 });
 
 const addTopStep = (type: WorkoutStepType) => {
-  editing.value = { blockIndex: null, stepIndex: null, step: makeStep(type, draft.steps?.length ?? 0), order: draft.steps?.length ?? 0 };
+  const order = nextGlobalOrder();
+  editing.value = { blockIndex: null, stepIndex: null, step: makeStep(type, order), order };
 };
 
 const addStepToBlock = (blockIndex: number, type: WorkoutStepType) => {
-  if (type === 'BREAK') {
-    openQuickBreak(blockIndex);
-    return;
-  }
   const order = draft.blocks?.[blockIndex]?.steps.length ?? 0;
   editing.value = { blockIndex, stepIndex: null, step: makeStep(type, order), order };
 };
@@ -199,7 +217,7 @@ const selectAddExercise = () => {
 
 const selectAddBreak = () => {
   closeAddMenu();
-  openQuickBreak(null);
+  addTopStep('BREAK');
 };
 
 const selectAddGroup = () => {
@@ -257,7 +275,15 @@ const handleDocumentPointerDown = (event: PointerEvent) => {
 
 const editTopStep = (stepIndex: number) => {
   const step = draft.steps?.[stepIndex];
-  if (step) editing.value = { blockIndex: null, stepIndex, step: { ...step }, order: stepIndex };
+  if (step) editing.value = { blockIndex: null, stepIndex, step: { ...step }, order: step.sortOrder };
+};
+
+const removeTopStep = (stepIndex: number) => {
+  draft.steps?.splice(stepIndex, 1);
+};
+
+const removeBlock = (blockIndex: number) => {
+  draft.blocks?.splice(blockIndex, 1);
 };
 
 const editBlockStep = (blockIndex: number, stepIndex: number) => {
@@ -281,7 +307,7 @@ const saveStep = (step: WorkoutStepDto) => {
 const addBlock = () => {
   const block: WorkoutBlockDto = {
     title: 'Nuovo gruppo',
-    sortOrder: draft.blocks?.length ?? 0,
+    sortOrder: nextGlobalOrder(),
     repeatCount: 2,
     color: 'var(--app-accent)',
     collapsed: false,
@@ -304,11 +330,17 @@ const save = async () => {
     return;
   }
   draft.estimatedDurationSeconds = estimatedDuration.value;
-  draft.steps = (draft.steps ?? []).map((step, index) => ({ ...step, sortOrder: index }));
-  draft.blocks = (draft.blocks ?? []).map((block, blockIndex) => ({
+  orderedDraftItems.value.forEach((item, globalIndex) => {
+    if (item.type === 'step') {
+      item.step.sortOrder = globalIndex;
+      return;
+    }
+    item.block.sortOrder = globalIndex;
+  });
+  draft.steps = (draft.steps ?? []).map((step) => ({ ...step }));
+  draft.blocks = (draft.blocks ?? []).map((block) => ({
     ...block,
-    sortOrder: blockIndex,
-    repeatCount: Math.max(1, block.repeatCount || 1),
+    repeatCount: normalizedRepeatCount(block.repeatCount),
     steps: block.steps.map((step, stepIndex) => ({ ...step, sortOrder: stepIndex })),
   }));
   const saved = await workouts.saveTemplate(draft, isNew.value ? undefined : numericId.value);

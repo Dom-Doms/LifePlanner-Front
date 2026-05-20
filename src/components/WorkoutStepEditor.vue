@@ -1,78 +1,70 @@
 <template>
   <div class="modal-backdrop" @click.self="$emit('close')">
-    <form class="modal workout-step-modal" @submit.prevent="submit">
-      <div class="modal-header">
-        <div>
-          <h2>{{ model.stepType === 'BREAK' ? 'Recupero' : 'Esercizio' }}</h2>
-          <p>Configura tipo, durata o ripetizioni.</p>
-        </div>
+    <form class="modal workout-step-modal" :class="`workout-step-modal--${model.stepType.toLowerCase()}`" @submit.prevent="submit">
+      <div class="workout-step-modal__top">
+        <button class="icon-btn icon-btn--light" type="button" @click="$emit('close')">&lsaquo;</button>
+        <strong>{{ model.stepType === 'BREAK' ? 'Recupero' : 'Esercizio' }}</strong>
         <button class="icon-btn icon-btn--light" type="button" @click="$emit('close')">x</button>
       </div>
 
-      <label class="form-field">
-        <span class="field-label">Tipo</span>
-        <select v-model="model.stepType" @change="syncType">
-          <option value="ACTIVE">Esercizio</option>
-          <option value="BREAK">Recupero</option>
-        </select>
-      </label>
+      <section class="workout-step-card">
+        <div class="workout-step-toggle">
+          <button type="button" :class="{ active: model.stepType === 'ACTIVE' }" @click="setStepType('ACTIVE')">Esercizio</button>
+          <button type="button" :class="{ active: model.stepType === 'BREAK' }" @click="setStepType('BREAK')">Recupero</button>
+        </div>
 
-      <label class="form-field">
-        <span class="field-label">Nome</span>
-        <input v-model.trim="model.name" :required="model.stepType === 'ACTIVE'" :placeholder="model.stepType === 'BREAK' ? 'Break' : 'Push up'" />
-      </label>
-
-      <label class="form-field">
-        <span class="field-label">Descrizione</span>
-        <textarea v-model.trim="model.description" placeholder="Note opzionali"></textarea>
-      </label>
-
-      <label v-if="model.stepType === 'ACTIVE'" class="form-field">
-        <span class="field-label">Modalita</span>
-        <select v-model="model.measurementType">
-          <option value="REPS">Ripetizioni</option>
-          <option value="TIME">Tempo</option>
-        </select>
-      </label>
-
-      <div v-if="model.measurementType === 'TIME' || model.stepType === 'BREAK'" class="form-grid">
-        <label class="form-field">
-          <span class="field-label">Minuti</span>
-          <input v-model.number="minutes" type="number" min="0" />
+        <label class="form-field workout-step-title-field">
+          <span class="field-label">Titolo</span>
+          <input v-model.trim="model.name" required :placeholder="model.stepType === 'BREAK' ? 'Recupero' : 'Push up'" />
         </label>
-        <label class="form-field">
-          <span class="field-label">Secondi</span>
-          <input v-model.number="seconds" type="number" min="0" max="59" />
+
+        <div v-if="model.stepType === 'ACTIVE'" class="workout-step-toggle workout-step-toggle--measure">
+          <button type="button" :class="{ active: model.measurementType === 'TIME' }" @click="model.measurementType = 'TIME'">Per tempo</button>
+          <button type="button" :class="{ active: model.measurementType === 'REPS' }" @click="model.measurementType = 'REPS'">Per reps</button>
+        </div>
+
+        <div class="workout-step-preview" :class="{ 'workout-step-preview--break': model.stepType === 'BREAK' }">
+          <strong v-if="model.measurementType === 'REPS' && model.stepType === 'ACTIVE'">x{{ model.reps || 0 }}</strong>
+          <strong v-else>{{ timePreview }}</strong>
+          <small>{{ model.stepType === 'BREAK' ? 'recupero' : model.measurementType === 'TIME' ? 'for time' : 'for reps' }}</small>
+        </div>
+
+        <div v-if="model.measurementType === 'TIME' || model.stepType === 'BREAK'" class="form-grid">
+          <label class="form-field">
+            <span class="field-label">Minuti</span>
+            <input v-model.number="minutes" type="number" min="0" max="99" />
+          </label>
+          <label class="form-field">
+            <span class="field-label">Secondi</span>
+            <input v-model.number="seconds" type="number" min="0" max="59" />
+          </label>
+        </div>
+
+        <label v-else class="form-field">
+          <span class="field-label">Ripetizioni</span>
+          <input v-model.number="model.reps" type="number" min="1" required />
         </label>
-      </div>
 
-      <label v-else class="form-field">
-        <span class="field-label">Ripetizioni</span>
-        <input v-model.number="model.reps" type="number" min="1" required />
-      </label>
+        <label class="form-field">
+          <span class="field-label">Descrizione</span>
+          <textarea v-model.trim="model.description" placeholder="Note opzionali"></textarea>
+        </label>
 
-      <label class="form-field">
-        <span class="field-label">Intensita / colore</span>
-        <select v-model="model.color">
-          <option value="">Neutro</option>
-          <option value="var(--workout-active)">Attivo</option>
-          <option value="var(--workout-break)">Recupero</option>
-          <option value="var(--app-accent)">Focus</option>
-        </select>
-      </label>
+        <label class="form-field">
+          <span class="field-label">Intensita</span>
+          <input v-model.trim="model.intensity" placeholder="Leggera, media, alta..." />
+        </label>
+      </section>
 
       <p v-if="error" class="form-alert">{{ error }}</p>
-      <div class="modal-actions">
-        <button class="secondary-btn" type="button" @click="$emit('close')">Annulla</button>
-        <button class="primary-btn" type="submit">Salva</button>
-      </div>
+      <button class="primary-btn workout-step-done" type="submit">Done</button>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
-import type { WorkoutStepDto } from '@/types/api';
+import { computed, reactive, ref, watch } from 'vue';
+import type { WorkoutStepDto, WorkoutStepType } from '@/types/api';
 
 const props = defineProps<{ step?: WorkoutStepDto | null; order: number }>();
 const emit = defineEmits<{ save: [step: WorkoutStepDto]; close: [] }>();
@@ -92,6 +84,9 @@ const model = reactive<WorkoutStepDto>({
 const minutes = ref(0);
 const seconds = ref(30);
 const error = ref('');
+const timePreview = computed(() =>
+  `${String(Number(minutes.value) || 0).padStart(2, '0')}:${String(Number(seconds.value) || 0).padStart(2, '0')}`,
+);
 
 watch(() => props.step, (step) => {
   Object.assign(model, step ?? {
@@ -113,13 +108,24 @@ watch(() => props.step, (step) => {
 
 const syncType = () => {
   if (model.stepType === 'BREAK') {
-    model.name = model.name || 'Break';
+    model.name = model.name || 'Recupero';
     model.measurementType = 'TIME';
-    model.color = model.color || 'var(--workout-break)';
+    model.color = 'var(--workout-break)';
+  } else {
+    model.color = model.color === 'var(--workout-break)' ? 'var(--workout-active)' : model.color || 'var(--workout-active)';
+    if (!model.reps) {
+      model.reps = 10;
+    }
   }
 };
 
+const setStepType = (type: WorkoutStepType) => {
+  model.stepType = type;
+  syncType();
+};
+
 const submit = () => {
+  error.value = '';
   const duration = Math.max(0, (Number(minutes.value) || 0) * 60 + (Number(seconds.value) || 0));
   if (model.stepType === 'BREAK' || model.measurementType === 'TIME') {
     if (duration <= 0) {

@@ -236,8 +236,27 @@ export interface WorkoutRunResponse {
   currentStepIndex: number;
   currentBlockIndex: number;
   currentLap: number;
+  totalSteps: number;
+  remainingSteps: number;
+  currentStep?: WorkoutRunStepResponse | null;
+  nextStep?: WorkoutRunStepResponse | null;
   snapshotJson?: string | null;
   template: WorkoutTemplateResponse;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WorkoutRunStepResponse {
+  stepId?: number | null;
+  name: string;
+  stepType: WorkoutStepType;
+  measurementType: WorkoutMeasurementType;
+  durationSeconds?: number | null;
+  reps?: number | null;
+  sequenceIndex: number;
+  blockId?: number | null;
+  blockTitle?: string | null;
+  blockIndex: number;
+  currentSet: number;
+  totalSets: number;
 }

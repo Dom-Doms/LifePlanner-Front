@@ -552,7 +552,7 @@ textarea {
   height: 100%;
   overflow: hidden;
   position: relative;
-  padding-right: 26px;
+  padding: 6px 26px 6px 8px;
   border: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
   align-content: start;
   gap: 2px;
@@ -573,21 +573,15 @@ textarea {
   gap: 0;
 }
 
-.timeline-event-card--compact small:not(.timeline-event-time),
-.timeline-event-card--compact p {
-  display: none;
-}
-
 .timeline-event-card--tiny {
-  padding: 0;
+  padding: 1px 18px 1px 5px;
   border-radius: 6px;
   gap: 0;
 }
 
-.timeline-event-card--tiny strong,
-.timeline-event-card--tiny small,
-.timeline-event-card--tiny p {
-  display: none;
+.timeline-event-card--tiny strong {
+  font-size: 10px;
+  line-height: 1;
 }
 
 .timeline-event-card--tiny .event-completed-check {
@@ -700,6 +694,16 @@ textarea {
 
 .event-card--completed strong {
   padding-right: 18px;
+}
+
+.event-card--workout {
+  border: 2px solid color-mix(in srgb, var(--workout-active) 52%, var(--app-border));
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--workout-active) 84%, transparent);
+}
+
+.event-card--workout.event-card--completed {
+  border-color: color-mix(in srgb, var(--app-success) 66%, var(--app-border));
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--app-success) 84%, transparent);
 }
 
 .event-completed-check {
@@ -926,6 +930,20 @@ textarea {
   align-items: end;
 }
 
+.workout-block-editor__header > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.workout-block-editor__header small,
+.workout-block-editor__meta {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .workout-block-editor__header label {
   display: grid;
   gap: 4px;
@@ -1029,7 +1047,99 @@ textarea {
 }
 
 .workout-step-modal {
+  width: min(100%, 430px);
   gap: 12px;
+  background: var(--app-bg);
+}
+
+.workout-step-modal__top {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.workout-step-modal__top strong {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.workout-step-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: var(--app-surface);
+  box-shadow: var(--app-card-shadow);
+}
+
+.workout-step-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: var(--app-surface-soft);
+}
+
+.workout-step-toggle button {
+  min-width: 0;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.workout-step-toggle button.active {
+  background: color-mix(in srgb, var(--workout-active) 18%, var(--app-surface));
+  color: var(--app-text);
+  box-shadow: var(--app-card-shadow);
+}
+
+.workout-step-modal--break .workout-step-toggle button.active,
+.workout-step-preview--break {
+  background: color-mix(in srgb, var(--workout-break) 18%, var(--app-surface));
+}
+
+.workout-step-title-field input {
+  min-height: 48px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.workout-step-preview {
+  width: min(100%, 250px);
+  aspect-ratio: 1;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--workout-active) 16%, var(--app-surface));
+  border: 10px solid color-mix(in srgb, var(--workout-active) 42%, var(--app-border));
+  box-shadow: var(--app-shadow);
+}
+
+.workout-step-preview strong {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.workout-step-preview small {
+  color: var(--app-muted);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.workout-step-done {
+  width: 100%;
+  min-height: 48px;
 }
 
 .workout-detail {
@@ -1180,6 +1290,23 @@ textarea {
   font-weight: 900;
 }
 
+.workout-run__set-chip {
+  display: grid;
+  gap: 3px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--workout-active) 42%, var(--app-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--workout-active) 12%, var(--app-surface));
+}
+
+.workout-run__set-chip span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
 .progress-ring {
   --progress: 0%;
   width: min(72vw, 300px);
@@ -1243,6 +1370,17 @@ textarea {
   align-items: center;
   padding: 8px;
   border-radius: 12px;
+}
+
+.workout-run-list__item strong {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.workout-run-list__item strong small {
+  color: var(--app-muted);
+  font-weight: 800;
 }
 
 .workout-run-list__item--active {

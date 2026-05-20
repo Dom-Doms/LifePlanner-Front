@@ -19,26 +19,32 @@
       </div>
 
       <section class="workout-structure">
-        <article v-for="step in topSteps" :key="`top-${step.sortOrder}`" class="workout-step-row" :class="`workout-step-row--${step.stepType.toLowerCase()}`">
-          <strong>{{ step.name }}</strong>
-          <span>{{ stepLabel(step) }}</span>
-        </article>
+        <template v-for="item in orderedItems" :key="`${item.type}-${item.key}`">
+          <article
+            v-if="item.type === 'step'"
+            class="workout-step-row"
+            :class="`workout-step-row--${item.step.stepType.toLowerCase()}`"
+          >
+            <strong>{{ item.step.name }}</strong>
+            <span>{{ stepLabel(item.step) }}</span>
+          </article>
 
-        <article v-for="(block, index) in template.blocks ?? []" :key="block.id ?? index" class="workout-block-detail">
-          <button type="button" class="workout-block-detail__header" @click="toggleBlock(index)">
+          <article v-else class="workout-block-detail">
+          <button type="button" class="workout-block-detail__header" @click="toggleBlock(item.index)">
             <span>
-              <strong>{{ block.title }}</strong>
-              <small>x{{ block.repeatCount }} laps</small>
+              <strong>{{ item.block.title }}</strong>
+              <small>x{{ item.block.repeatCount }} serie · {{ formatWorkoutDuration(estimateWorkoutBlockSeconds(item.block)) }}</small>
             </span>
-            <span>{{ collapsed[index] ? '+' : '-' }}</span>
+            <span>{{ collapsed[item.index] ? '+' : '-' }}</span>
           </button>
-          <div v-if="!collapsed[index]" class="workout-block-detail__steps">
-            <div v-for="step in block.steps" :key="`${block.id}-${step.sortOrder}`" class="workout-step-row" :class="`workout-step-row--${step.stepType.toLowerCase()}`">
+          <div v-if="!collapsed[item.index]" class="workout-block-detail__steps">
+            <div v-for="step in item.block.steps" :key="`${item.block.id}-${step.sortOrder}`" class="workout-step-row" :class="`workout-step-row--${step.stepType.toLowerCase()}`">
               <strong>{{ step.name }}</strong>
               <span>{{ stepLabel(step) }}</span>
             </div>
           </div>
         </article>
+        </template>
 
         <p v-if="!sequence.length" class="empty-state">Scheda vuota. Aggiungi esercizi per poter iniziare.</p>
       </section>
@@ -60,9 +66,9 @@ import AppLayout from '@/components/AppLayout.vue';
 import { getWorkoutTemplate } from '@/api/workoutsApi';
 import { flattenWorkoutTemplate } from '@/composables/useWorkoutRunner';
 import { useWorkoutStore } from '@/stores/workoutStore';
-import type { WorkoutStepDto, WorkoutTemplateResponse } from '@/types/api';
+import type { WorkoutBlockDto, WorkoutStepDto, WorkoutTemplateResponse } from '@/types/api';
 import { getErrorMessage } from '@/utils/errorMessage';
-import { estimateWorkoutTemplateSeconds, formatWorkoutDuration } from '@/utils/workoutDuration';
+import { estimateWorkoutBlockSeconds, estimateWorkoutTemplateSeconds, formatWorkoutDuration } from '@/utils/workoutDuration';
 
 const route = useRoute();
 const router = useRouter();
@@ -74,6 +80,18 @@ const error = ref('');
 
 const sequence = computed(() => (template.value ? flattenWorkoutTemplate(template.value) : []));
 const topSteps = computed(() => template.value?.steps?.length ? template.value.steps : (!template.value?.blocks?.length ? sequence.value : []));
+const orderedItems = computed(() => {
+  if (!template.value) return [];
+  const steps = topSteps.value.map((step, index) => ({ type: 'step' as const, key: step.id ?? `top-${index}`, sortOrder: step.sortOrder, step }));
+  const blocks = (template.value.blocks ?? []).map((block, index) => ({
+    type: 'block' as const,
+    key: block.id ?? `block-${index}`,
+    sortOrder: block.sortOrder,
+    block: { ...block, steps: block.steps.slice().sort((a, b) => a.sortOrder - b.sortOrder) } as WorkoutBlockDto,
+    index,
+  }));
+  return [...steps, ...blocks].sort((a, b) => a.sortOrder - b.sortOrder);
+});
 const workoutSessionId = computed(() => {
   const raw = route.query.workoutSessionId;
   const value = Array.isArray(raw) ? raw[0] : raw;
