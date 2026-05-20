@@ -892,7 +892,7 @@ textarea {
   border-left-color: var(--workout-break);
 }
 
-.workout-step-row button:not(.danger-btn) {
+.workout-step-row__edit {
   width: 100%;
   min-width: 0;
   border: 0;
@@ -902,6 +902,59 @@ textarea {
   display: grid;
   gap: 4px;
   cursor: pointer;
+}
+
+.workout-card-toolbar,
+.workout-step-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.workout-card-toolbar {
+  justify-content: space-between;
+}
+
+.workout-card-toolbar > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.workout-card-toolbar strong,
+.workout-card-toolbar span {
+  overflow-wrap: anywhere;
+}
+
+.workout-card-toolbar span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.workout-reorder-controls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.workout-reorder-btn {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-button-secondary-bg);
+  color: var(--app-button-secondary-text);
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.workout-reorder-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .workout-step-row strong,
