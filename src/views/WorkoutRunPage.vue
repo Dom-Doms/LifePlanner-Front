@@ -10,6 +10,13 @@
         <button class="secondary-btn" type="button" @click="showList = !showList">Lista</button>
       </header>
 
+      <Transition name="workout-step-banner">
+        <section v-if="stepNotifier.banner.value" class="workout-step-banner" :class="`workout-step-banner--${stepNotifier.bannerTone.value}`">
+          <strong>{{ stepNotifier.banner.value.title }}</strong>
+          <span>{{ stepNotifier.banner.value.body }}</span>
+        </section>
+      </Transition>
+
       <section v-if="runner.currentStep.value" class="workout-run__main" :class="`workout-run__main--${runner.currentStep.value.stepType.toLowerCase()}`">
         <div v-if="runner.currentStep.value.blockTitle" class="workout-run__set-chip">
           <strong>Serie {{ runner.currentStep.value.lap }}/{{ runner.currentStep.value.totalLaps }}</strong>
@@ -62,10 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useWorkoutRunner } from '@/composables/useWorkoutRunner';
+import { useWorkoutStepNotifier } from '@/composables/useWorkoutStepNotifier';
 import { usePlanningStore } from '@/stores/planningStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import { getErrorMessage } from '@/utils/errorMessage';
@@ -76,14 +84,22 @@ const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const { activeRun } = storeToRefs(workouts);
 const runner = useWorkoutRunner(activeRun);
+const stepNotifier = useWorkoutStepNotifier();
 const run = computed(() => activeRun.value);
 const showList = ref(false);
 const saveInterval = ref<number | undefined>();
+const lastNotifiedStepKey = ref<string | null>(null);
 const remainingSteps = computed(() => Math.max(0, runner.sequence.value.length - runner.currentIndex.value - 1));
 const eventDate = computed(() => {
   const raw = route.query.eventDate;
   const value = Array.isArray(raw) ? raw[0] : raw;
   return value || null;
+});
+const currentNotificationKey = computed(() => {
+  const currentRun = run.value;
+  const step = runner.currentStep.value;
+  if (!currentRun || !step) return null;
+  return `${currentRun.id}-${runner.currentIndex.value}-${step.blockIndex}-${step.lap}`;
 });
 
 const persistState = async () => {
@@ -138,6 +154,24 @@ const cancel = async () => {
 };
 
 const formatSeconds = (total: number) => `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+
+const notificationStorageKey = (runId: number) => `lifeplanner-workout-step-notified:${runId}`;
+
+watch(currentNotificationKey, (key) => {
+  const currentRun = run.value;
+  const step = runner.currentStep.value;
+  if (!key || !currentRun || !step || runner.isFinished.value || runner.isPaused.value) return;
+
+  const storedKey = sessionStorage.getItem(notificationStorageKey(currentRun.id));
+  if (lastNotifiedStepKey.value === key || storedKey === key) {
+    lastNotifiedStepKey.value = key;
+    return;
+  }
+
+  lastNotifiedStepKey.value = key;
+  sessionStorage.setItem(notificationStorageKey(currentRun.id), key);
+  stepNotifier.notifyWorkoutStep(step);
+});
 
 onMounted(async () => {
   try {
