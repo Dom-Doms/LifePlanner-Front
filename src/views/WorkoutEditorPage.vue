@@ -34,7 +34,6 @@
         <div class="workout-block-editor__header">
           <div>
             <input v-model.trim="item.block.title" placeholder="Titolo gruppo" />
-            <small>{{ formatWorkoutDuration(estimateWorkoutBlockSeconds(item.block)) }}</small>
           </div>
           <label>
             <span>Serie</span>
@@ -77,45 +76,21 @@
       </button>
     </div>
 
-    <WorkoutStepEditor
-      v-if="editing"
+    <WorkoutExerciseEditor
+      v-if="editing?.step.stepType === 'ACTIVE'"
       :step="editing.step"
       :order="editing.order"
       @close="editing = null"
       @save="saveStep"
     />
 
-    <div v-if="quickBreak" class="modal-backdrop" @click.self="closeQuickBreak">
-      <form class="modal quick-break-modal" @submit.prevent="saveQuickBreak">
-        <div class="modal-header">
-          <div>
-            <h2>Recupero</h2>
-            <p>Imposta solo la durata.</p>
-          </div>
-          <button class="icon-btn icon-btn--light" type="button" @click="closeQuickBreak">x</button>
-        </div>
-        <div class="quick-break-presets">
-          <button v-for="preset in breakPresets" :key="preset.seconds" type="button" @click="setQuickBreakSeconds(preset.seconds)">
-            {{ preset.label }}
-          </button>
-        </div>
-        <div class="form-grid">
-          <label class="form-field">
-            <span class="field-label">Minuti</span>
-            <input v-model.number="quickBreak.minutes" type="number" min="0" max="30" />
-          </label>
-          <label class="form-field">
-            <span class="field-label">Secondi</span>
-            <input v-model.number="quickBreak.seconds" type="number" min="0" max="59" />
-          </label>
-        </div>
-        <p v-if="quickBreak.error" class="form-alert">{{ quickBreak.error }}</p>
-        <div class="modal-actions">
-          <button class="secondary-btn" type="button" @click="closeQuickBreak">Annulla</button>
-          <button class="primary-btn" type="submit">Salva recupero</button>
-        </div>
-      </form>
-    </div>
+    <WorkoutRecoveryEditor
+      v-if="editing?.step.stepType === 'BREAK'"
+      :step="editing.step"
+      :order="editing.order"
+      @close="editing = null"
+      @save="saveStep"
+    />
   </AppLayout>
 </template>
 
@@ -123,13 +98,13 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
-import WorkoutStepEditor from '@/components/WorkoutStepEditor.vue';
+import WorkoutExerciseEditor from '@/components/WorkoutExerciseEditor.vue';
+import WorkoutRecoveryEditor from '@/components/WorkoutRecoveryEditor.vue';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import type { WorkoutBlockDto, WorkoutStepDto, WorkoutStepType, WorkoutTemplateRequest } from '@/types/api';
 import { estimateWorkoutBlockSeconds, estimateWorkoutStepSeconds, formatWorkoutDuration } from '@/utils/workoutDuration';
 
 type EditingTarget = { blockIndex: number | null; stepIndex: number | null; step: WorkoutStepDto; order: number };
-type QuickBreakTarget = { blockIndex: number | null; minutes: number; seconds: number; error: string };
 type DraftItem =
   | { type: 'step'; index: number; sortOrder: number; step: WorkoutStepDto }
   | { type: 'block'; index: number; sortOrder: number; block: WorkoutBlockDto };
@@ -143,15 +118,6 @@ const editing = ref<EditingTarget | null>(null);
 const error = ref('');
 const isAddMenuOpen = ref(false);
 const addMenuRef = ref<HTMLElement | null>(null);
-const quickBreak = ref<QuickBreakTarget | null>(null);
-const breakPresets = [
-  { label: '30s', seconds: 30 },
-  { label: '45s', seconds: 45 },
-  { label: '1m', seconds: 60 },
-  { label: '1m30', seconds: 90 },
-  { label: '2m', seconds: 120 },
-  { label: '3m', seconds: 180 },
-];
 
 const draft = reactive<WorkoutTemplateRequest>({
   name: '',
@@ -223,47 +189,6 @@ const selectAddBreak = () => {
 const selectAddGroup = () => {
   closeAddMenu();
   addBlock();
-};
-
-const openQuickBreak = (blockIndex: number | null) => {
-  quickBreak.value = { blockIndex, minutes: 0, seconds: 45, error: '' };
-};
-
-const closeQuickBreak = () => {
-  quickBreak.value = null;
-};
-
-const setQuickBreakSeconds = (total: number) => {
-  if (!quickBreak.value) return;
-  quickBreak.value.minutes = Math.floor(total / 60);
-  quickBreak.value.seconds = total % 60;
-  quickBreak.value.error = '';
-};
-
-const saveQuickBreak = () => {
-  if (!quickBreak.value) return;
-  const totalSeconds = (Number(quickBreak.value.minutes) || 0) * 60 + (Number(quickBreak.value.seconds) || 0);
-  if (totalSeconds <= 0) {
-    quickBreak.value.error = 'La durata deve essere maggiore di zero.';
-    return;
-  }
-  if (totalSeconds > 1800) {
-    quickBreak.value.error = 'La durata massima consentita e 30 minuti.';
-    return;
-  }
-  const block = quickBreak.value.blockIndex === null ? null : draft.blocks?.[quickBreak.value.blockIndex];
-  const order = block ? block.steps.length : draft.steps?.length ?? 0;
-  const step: WorkoutStepDto = {
-    ...makeStep('BREAK', order),
-    name: 'Recupero',
-    durationSeconds: totalSeconds,
-  };
-  if (block) {
-    block.steps.push(step);
-  } else {
-    draft.steps?.push(step);
-  }
-  closeQuickBreak();
 };
 
 const handleDocumentPointerDown = (event: PointerEvent) => {

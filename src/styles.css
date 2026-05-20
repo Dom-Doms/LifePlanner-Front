@@ -1046,6 +1046,56 @@ textarea {
   cursor: pointer;
 }
 
+.workout-exercise-modal {
+  width: min(100%, 430px);
+  gap: 12px;
+  background: var(--app-bg);
+}
+
+.workout-exercise-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  background: var(--app-surface);
+  box-shadow: var(--app-card-shadow);
+}
+
+.workout-exercise-focus {
+  width: min(100%, 230px);
+  aspect-ratio: 1;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--workout-active) 18%, transparent), transparent),
+    var(--app-surface-soft);
+  border: 1px solid color-mix(in srgb, var(--workout-active) 36%, var(--app-border));
+  box-shadow: var(--app-shadow);
+}
+
+.workout-exercise-focus strong {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.workout-exercise-focus small {
+  color: var(--app-muted);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.workout-main-input input {
+  min-height: 52px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 900;
+}
+
 .workout-step-modal {
   width: min(100%, 430px);
   gap: 12px;
