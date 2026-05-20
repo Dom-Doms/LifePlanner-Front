@@ -17,41 +17,111 @@
     </section>
 
     <section class="workout-builder">
-      <template v-for="item in orderedDraftItems" :key="`${item.type}-${item.index}`">
+      <template v-for="(item, itemPosition) in orderedDraftItems" :key="`${item.type}-${item.index}`">
         <article
           v-if="item.type === 'step'"
           class="workout-step-row"
           :class="`workout-step-row--${item.step.stepType.toLowerCase()}`"
         >
-          <button type="button" @click="editTopStep(item.index)">
+          <div class="workout-reorder-controls" aria-label="Riordina elemento">
+            <button
+              class="workout-reorder-btn"
+              type="button"
+              aria-label="Sposta su"
+              :disabled="itemPosition === 0"
+              @click="moveTopLevelItem(itemPosition, itemPosition - 1)"
+            >
+              ↑
+            </button>
+            <button
+              class="workout-reorder-btn"
+              type="button"
+              aria-label="Sposta giù"
+              :disabled="itemPosition === orderedDraftItems.length - 1"
+              @click="moveTopLevelItem(itemPosition, itemPosition + 1)"
+            >
+              ↓
+            </button>
+          </div>
+          <button class="workout-step-row__edit" type="button" @click="editTopStep(item.index)">
             <strong>{{ item.step.name }}</strong>
             <span>{{ stepLabel(item.step) }}</span>
           </button>
-          <button class="danger-btn" type="button" @click="removeTopStep(item.index)">Rimuovi</button>
+          <button class="danger-btn danger-btn--compact" type="button" @click="removeTopStep(item.index)">Rimuovi</button>
         </article>
 
         <article v-else class="workout-block-editor">
-        <div class="workout-block-editor__header">
-          <div>
-            <input v-model.trim="item.block.title" placeholder="Titolo gruppo" />
+          <div class="workout-card-toolbar">
+            <div>
+              <strong>{{ item.block.title || 'Gruppo' }}</strong>
+              <span>x{{ normalizedRepeatCount(item.block.repeatCount) }} serie</span>
+            </div>
+            <div class="workout-reorder-controls" aria-label="Riordina gruppo">
+              <button
+                class="workout-reorder-btn"
+                type="button"
+                aria-label="Sposta gruppo su"
+                :disabled="itemPosition === 0"
+                @click="moveTopLevelItem(itemPosition, itemPosition - 1)"
+              >
+                ↑
+              </button>
+              <button
+                class="workout-reorder-btn"
+                type="button"
+                aria-label="Sposta gruppo giù"
+                :disabled="itemPosition === orderedDraftItems.length - 1"
+                @click="moveTopLevelItem(itemPosition, itemPosition + 1)"
+              >
+                ↓
+              </button>
+            </div>
           </div>
-          <label>
-            <span>Serie</span>
-            <input v-model.number="item.block.repeatCount" type="number" min="1" max="99" />
-          </label>
-        </div>
-        <p class="workout-block-editor__meta">x{{ normalizedRepeatCount(item.block.repeatCount) }} serie</p>
+          <div class="workout-block-editor__header">
+            <div>
+              <input v-model.trim="item.block.title" placeholder="Titolo gruppo" />
+            </div>
+            <label>
+              <span>Serie</span>
+              <input v-model.number="item.block.repeatCount" type="number" min="1" max="99" />
+            </label>
+          </div>
+          <p class="workout-block-editor__meta">x{{ normalizedRepeatCount(item.block.repeatCount) }} serie</p>
         <div class="workout-block-editor__steps">
-          <button
+          <div
             v-for="(step, stepIndex) in item.block.steps"
             :key="`b-${item.index}-s-${stepIndex}`"
-            type="button"
-            class="workout-step-pill"
-            @click="editBlockStep(item.index, stepIndex)"
+            class="workout-step-pill-row"
           >
-            <strong>{{ step.name }}</strong>
-            <span>{{ stepLabel(step) }}</span>
-          </button>
+            <div class="workout-reorder-controls" aria-label="Riordina step">
+              <button
+                class="workout-reorder-btn"
+                type="button"
+                aria-label="Sposta step su"
+                :disabled="stepIndex === 0"
+                @click="moveGroupStep(item.index, stepIndex, stepIndex - 1)"
+              >
+                ↑
+              </button>
+              <button
+                class="workout-reorder-btn"
+                type="button"
+                aria-label="Sposta step giù"
+                :disabled="stepIndex === item.block.steps.length - 1"
+                @click="moveGroupStep(item.index, stepIndex, stepIndex + 1)"
+              >
+                ↓
+              </button>
+            </div>
+            <button
+              type="button"
+              class="workout-step-pill"
+              @click="editBlockStep(item.index, stepIndex)"
+            >
+              <strong>{{ step.name }}</strong>
+              <span>{{ stepLabel(step) }}</span>
+            </button>
+          </div>
         </div>
         <div class="card-actions card-actions--wrap">
           <button class="secondary-btn" type="button" @click="addStepToBlock(item.index, 'ACTIVE')">+ Esercizio</button>
@@ -145,6 +215,45 @@ const nextGlobalOrder = () => orderedDraftItems.value.length;
 
 const normalizedRepeatCount = (value?: number | null) => Math.min(99, Math.max(1, Number(value) || 1));
 
+const normalizeWorkoutPayloadBeforeSave = () => {
+  orderedDraftItems.value.forEach((item, globalIndex) => {
+    if (item.type === 'step') {
+      item.step.sortOrder = globalIndex;
+      item.step.blockId = null;
+      return;
+    }
+    item.block.sortOrder = globalIndex;
+    item.block.repeatCount = normalizedRepeatCount(item.block.repeatCount);
+    item.block.steps.forEach((step, stepIndex) => {
+      step.sortOrder = stepIndex;
+    });
+  });
+  draft.estimatedDurationSeconds = estimatedDuration.value;
+};
+
+const moveTopLevelItem = (fromIndex: number, toIndex: number) => {
+  const items = orderedDraftItems.value;
+  if (toIndex < 0 || toIndex >= items.length || fromIndex === toIndex) return;
+  const [moved] = items.splice(fromIndex, 1);
+  if (!moved) return;
+  items.splice(toIndex, 0, moved);
+  items.forEach((item, index) => {
+    if (item.type === 'step') item.step.sortOrder = index;
+    else item.block.sortOrder = index;
+  });
+};
+
+const moveGroupStep = (groupIndex: number, fromIndex: number, toIndex: number) => {
+  const steps = draft.blocks?.[groupIndex]?.steps;
+  if (!steps || toIndex < 0 || toIndex >= steps.length || fromIndex === toIndex) return;
+  const [moved] = steps.splice(fromIndex, 1);
+  if (!moved) return;
+  steps.splice(toIndex, 0, moved);
+  steps.forEach((step, index) => {
+    step.sortOrder = index;
+  });
+};
+
 const makeStep = (type: WorkoutStepType, order: number): WorkoutStepDto => ({
   name: type === 'BREAK' ? 'Recupero' : '',
   description: '',
@@ -205,10 +314,12 @@ const editTopStep = (stepIndex: number) => {
 
 const removeTopStep = (stepIndex: number) => {
   draft.steps?.splice(stepIndex, 1);
+  normalizeWorkoutPayloadBeforeSave();
 };
 
 const removeBlock = (blockIndex: number) => {
   draft.blocks?.splice(blockIndex, 1);
+  normalizeWorkoutPayloadBeforeSave();
 };
 
 const editBlockStep = (blockIndex: number, stepIndex: number) => {
@@ -219,13 +330,14 @@ const editBlockStep = (blockIndex: number, stepIndex: number) => {
 const saveStep = (step: WorkoutStepDto) => {
   if (!editing.value) return;
   if (editing.value.blockIndex === null) {
-    if (editing.value.stepIndex === null) draft.steps?.push(step);
+    if (editing.value.stepIndex === null) draft.steps?.push({ ...step, blockId: null });
     else draft.steps?.splice(editing.value.stepIndex, 1, step);
   } else {
     const block = draft.blocks?.[editing.value.blockIndex];
     if (editing.value.stepIndex === null) block?.steps.push(step);
     else block?.steps.splice(editing.value.stepIndex, 1, step);
   }
+  normalizeWorkoutPayloadBeforeSave();
   editing.value = null;
 };
 
@@ -254,14 +366,7 @@ const save = async () => {
     error.value = 'Il nome scheda e obbligatorio.';
     return;
   }
-  draft.estimatedDurationSeconds = estimatedDuration.value;
-  orderedDraftItems.value.forEach((item, globalIndex) => {
-    if (item.type === 'step') {
-      item.step.sortOrder = globalIndex;
-      return;
-    }
-    item.block.sortOrder = globalIndex;
-  });
+  normalizeWorkoutPayloadBeforeSave();
   draft.steps = (draft.steps ?? []).map((step) => ({ ...step }));
   draft.blocks = (draft.blocks ?? []).map((block) => ({
     ...block,
@@ -280,8 +385,13 @@ onMounted(async () => {
     draft.description = current.description ?? '';
     draft.estimatedDurationSeconds = current.estimatedDurationSeconds ?? 0;
     draft.exercises = current.exercises.map((exercise) => ({ ...exercise }));
-    draft.blocks = (current.blocks ?? []).map((block) => ({ ...block, steps: block.steps.map((step) => ({ ...step })) }));
-    draft.steps = (current.steps ?? []).map((step) => ({ ...step }));
+    draft.blocks = (current.blocks ?? [])
+      .map((block) => ({
+        ...block,
+        steps: block.steps.map((step) => ({ ...step })).sort((a, b) => a.sortOrder - b.sortOrder),
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    draft.steps = (current.steps ?? []).map((step) => ({ ...step })).sort((a, b) => a.sortOrder - b.sortOrder);
     if (!draft.steps.length && !draft.blocks.length && draft.exercises.length) {
       draft.steps = draft.exercises.map((exercise, index) => ({
         name: exercise.name,
