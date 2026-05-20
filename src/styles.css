@@ -1361,59 +1361,6 @@ textarea {
   text-align: center;
 }
 
-.workout-step-banner {
-  display: grid;
-  gap: 3px;
-  padding: 10px 12px;
-  border: 1px solid var(--app-border);
-  border-radius: 16px;
-  background: var(--app-surface);
-  box-shadow: var(--app-card-shadow);
-}
-
-.workout-step-banner strong,
-.workout-step-banner span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.workout-step-banner strong {
-  font-size: 15px;
-  line-height: 1.15;
-}
-
-.workout-step-banner span {
-  color: var(--app-muted);
-  font-weight: 900;
-}
-
-.workout-step-banner--active {
-  border-color: color-mix(in srgb, var(--workout-active) 52%, var(--app-border));
-  box-shadow:
-    inset 3px 0 0 color-mix(in srgb, var(--workout-active) 82%, transparent),
-    var(--app-card-shadow);
-}
-
-.workout-step-banner--break {
-  border-color: color-mix(in srgb, var(--workout-break) 52%, var(--app-border));
-  box-shadow:
-    inset 3px 0 0 color-mix(in srgb, var(--workout-break) 82%, transparent),
-    var(--app-card-shadow);
-}
-
-.workout-step-banner-enter-active,
-.workout-step-banner-leave-active {
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-
-.workout-step-banner-enter-from,
-.workout-step-banner-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-
 .workout-run__top small,
 .next-up {
   color: var(--app-muted);

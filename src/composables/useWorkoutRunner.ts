@@ -9,6 +9,10 @@ export interface ExecutableWorkoutStep extends WorkoutStepDto {
   originStepId?: number | null;
 }
 
+interface WorkoutRunnerOptions {
+  onTimedStepComplete?: (step: ExecutableWorkoutStep) => void;
+}
+
 const tickMs = 1000;
 
 export const flattenWorkoutTemplate = (template: WorkoutTemplateResponse): ExecutableWorkoutStep[] => {
@@ -35,7 +39,7 @@ export const flattenWorkoutTemplate = (template: WorkoutTemplateResponse): Execu
   return sequence.map((step, index) => ({ ...step, sortOrder: index }));
 };
 
-export const useWorkoutRunner = (run: { value: WorkoutRunResponse | null }) => {
+export const useWorkoutRunner = (run: { value: WorkoutRunResponse | null }, options: WorkoutRunnerOptions = {}) => {
   const sequence = computed(() => (run.value ? flattenWorkoutTemplate(run.value.template) : []));
   const currentIndex = ref(0);
   const elapsedTime = ref(0);
@@ -72,6 +76,7 @@ export const useWorkoutRunner = (run: { value: WorkoutRunResponse | null }) => {
       if (currentStep.value.measurementType === 'REPS') return;
       remainingTime.value = Math.max(0, remainingTime.value - 1);
       if (remainingTime.value <= 0) {
+        options.onTimedStepComplete?.(currentStep.value);
         next();
       }
     }, tickMs);
