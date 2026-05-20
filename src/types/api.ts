@@ -196,6 +196,15 @@ export interface WorkoutTemplateRequest {
   steps?: WorkoutStepDto[];
 }
 
+export interface WorkoutTemplateShareRequest {
+  targetUserId: number;
+}
+
+export interface WorkoutTemplateShareResponse {
+  message: string;
+  copiedTemplateId: number;
+}
+
 export interface WorkoutParticipantDto {
   id?: number | null;
   userId?: number | null;

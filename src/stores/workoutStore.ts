@@ -12,6 +12,7 @@ import {
   getWorkoutTemplates,
   pauseWorkoutRun,
   resumeWorkoutRun,
+  shareWorkoutTemplate,
   startWorkoutRun,
   updateWorkoutRunState,
   updateWorkoutTemplate,
@@ -44,6 +45,10 @@ export const useWorkoutStore = defineStore('workouts', () => {
   const removeTemplate = async (id: number) => {
     await deleteWorkoutTemplate(id);
     await loadTemplates();
+  };
+
+  const shareTemplate = async (templateId: number, targetUserId: number) => {
+    return shareWorkoutTemplate(templateId, { targetUserId });
   };
 
   const loadSessions = async (from: string, to: string) => {
@@ -106,6 +111,7 @@ export const useWorkoutStore = defineStore('workouts', () => {
     loadTemplates,
     saveTemplate,
     removeTemplate,
+    shareTemplate,
     loadSessions,
     loadDaySessions,
     assignFromTemplate,

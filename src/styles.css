@@ -1266,6 +1266,54 @@ textarea {
   width: 100%;
 }
 
+.workout-share-modal {
+  gap: 14px;
+}
+
+.workout-share-results {
+  display: grid;
+  gap: 8px;
+}
+
+.workout-share-user {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  background: var(--app-surface-soft);
+  color: var(--app-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.workout-share-user strong,
+.workout-share-user span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workout-share-user span {
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.workout-share-user--selected {
+  border-color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 14%, var(--app-surface));
+}
+
+.success-text {
+  margin: 0;
+  color: var(--app-success);
+  font-weight: 900;
+}
+
 @media (max-width: 520px) {
   .workout-detail__action-bar {
     align-items: flex-start;

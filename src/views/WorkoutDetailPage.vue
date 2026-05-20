@@ -5,6 +5,7 @@
         <div class="page-header page-header--row workout-detail__action-bar">
           <button class="icon-btn icon-btn--light" type="button" @click="router.push('/workouts')">&lsaquo;</button>
           <div class="workout-detail__actions">
+            <button class="secondary-btn secondary-btn--compact" type="button" @click="openShareModal">Condividi</button>
             <RouterLink class="secondary-btn secondary-btn--compact" :to="`/workouts/${template.id}/edit`">Modifica</RouterLink>
             <button class="danger-btn danger-btn--compact" type="button" @click="remove">Elimina</button>
           </div>
@@ -55,6 +56,50 @@
         </button>
       </div>
       <p v-if="error" class="form-alert">{{ error }}</p>
+
+      <div v-if="shareOpen" class="modal-backdrop" @click.self="closeShareModal">
+        <section class="modal workout-share-modal" role="dialog" aria-modal="true" aria-labelledby="workout-share-title">
+          <div class="modal-header">
+            <div>
+              <h2 id="workout-share-title">Condividi scheda</h2>
+              <p>Invia una copia indipendente di questa scheda a un altro utente.</p>
+            </div>
+            <button class="icon-btn" type="button" aria-label="Chiudi" @click="closeShareModal">×</button>
+          </div>
+
+          <label class="form-field">
+            <span>Cerca utente</span>
+            <input v-model="shareQuery" type="search" placeholder="Email o nome utente" @input="searchShareTargets" />
+          </label>
+
+          <div class="workout-share-results">
+            <button
+              v-for="user in shareResults"
+              :key="user.id"
+              type="button"
+              class="workout-share-user"
+              :class="{ 'workout-share-user--selected': selectedShareUser?.id === user.id }"
+              @click="selectedShareUser = user"
+            >
+              <strong>{{ user.displayName || user.username }}</strong>
+              <span>{{ user.email }}</span>
+            </button>
+            <p v-if="shareQuery.trim().length >= 2 && !shareSearching && !shareResults.length" class="empty-state">
+              Nessun utente trovato.
+            </p>
+          </div>
+
+          <p v-if="shareMessage" class="success-text">{{ shareMessage }}</p>
+          <p v-if="shareError" class="form-alert">{{ shareError }}</p>
+
+          <div class="modal-actions">
+            <button class="secondary-btn" type="button" @click="closeShareModal">Annulla</button>
+            <button class="primary-btn" type="button" :disabled="!selectedShareUser || shareLoading" @click="sendShare">
+              {{ shareLoading ? 'Invio...' : 'Invia scheda' }}
+            </button>
+          </div>
+        </section>
+      </div>
     </section>
   </AppLayout>
 </template>
@@ -64,9 +109,10 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import { getWorkoutTemplate } from '@/api/workoutsApi';
+import { searchUsers } from '@/api/usersApi';
 import { flattenWorkoutTemplate } from '@/composables/useWorkoutRunner';
 import { useWorkoutStore } from '@/stores/workoutStore';
-import type { WorkoutBlockDto, WorkoutStepDto, WorkoutTemplateResponse } from '@/types/api';
+import type { UserResponse, WorkoutBlockDto, WorkoutStepDto, WorkoutTemplateResponse } from '@/types/api';
 import { getErrorMessage } from '@/utils/errorMessage';
 import { estimateWorkoutBlockSeconds, estimateWorkoutTemplateSeconds, formatWorkoutDuration } from '@/utils/workoutDuration';
 
@@ -77,6 +123,15 @@ const template = ref<WorkoutTemplateResponse | null>(null);
 const collapsed = ref<Record<number, boolean>>({});
 const starting = ref(false);
 const error = ref('');
+const shareOpen = ref(false);
+const shareQuery = ref('');
+const shareResults = ref<UserResponse[]>([]);
+const selectedShareUser = ref<UserResponse | null>(null);
+const shareSearching = ref(false);
+const shareLoading = ref(false);
+const shareError = ref('');
+const shareMessage = ref('');
+let shareSearchToken = 0;
 
 const sequence = computed(() => (template.value ? flattenWorkoutTemplate(template.value) : []));
 const topSteps = computed(() => template.value?.steps?.length ? template.value.steps : (!template.value?.blocks?.length ? sequence.value : []));
@@ -137,6 +192,67 @@ const remove = async () => {
   if (!template.value || !window.confirm('Eliminare o archiviare questa scheda?')) return;
   await workouts.removeTemplate(template.value.id);
   await router.push('/workouts');
+};
+
+const openShareModal = () => {
+  shareOpen.value = true;
+  shareError.value = '';
+  shareMessage.value = '';
+};
+
+const closeShareModal = () => {
+  shareOpen.value = false;
+  shareQuery.value = '';
+  shareResults.value = [];
+  selectedShareUser.value = null;
+  shareError.value = '';
+  shareMessage.value = '';
+};
+
+const searchShareTargets = async () => {
+  const query = shareQuery.value.trim();
+  selectedShareUser.value = null;
+  shareError.value = '';
+  shareMessage.value = '';
+  if (query.length < 2) {
+    shareResults.value = [];
+    return;
+  }
+
+  const token = ++shareSearchToken;
+  try {
+    shareSearching.value = true;
+    const results = await searchUsers(query);
+    if (token === shareSearchToken) {
+      shareResults.value = results;
+    }
+  } catch (err) {
+    if (token === shareSearchToken) {
+      shareError.value = getErrorMessage(err);
+      shareResults.value = [];
+    }
+  } finally {
+    if (token === shareSearchToken) {
+      shareSearching.value = false;
+    }
+  }
+};
+
+const sendShare = async () => {
+  if (!template.value || !selectedShareUser.value) return;
+  try {
+    shareLoading.value = true;
+    shareError.value = '';
+    const response = await workouts.shareTemplate(template.value.id, selectedShareUser.value.id);
+    shareMessage.value = response.message || 'Scheda inviata correttamente.';
+    selectedShareUser.value = null;
+    shareQuery.value = '';
+    shareResults.value = [];
+  } catch (err) {
+    shareError.value = getErrorMessage(err);
+  } finally {
+    shareLoading.value = false;
+  }
 };
 
 onMounted(async () => {
