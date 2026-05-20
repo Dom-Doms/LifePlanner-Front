@@ -78,6 +78,7 @@
       @close="closeSelectedEventModal"
       @save="saveEvent"
       @delete="deleteEvent"
+      @link-workout="linkParticipantWorkout"
     />
   </AppLayout>
 </template>
@@ -249,10 +250,25 @@ const deleteEvent = async (event: CalendarEventResponse) => {
     await workouts.loadDaySessions(event.eventDate);
     selectedEvent.value = null;
     clearEventFormErrors();
-    feedback.value = 'Evento eliminato.';
+    feedback.value = event.owner === false ? 'Evento rimosso per te.' : 'Evento eliminato.';
     error.value = '';
   } catch (err) {
     error.value = getErrorMessage(err);
+  }
+};
+
+const linkParticipantWorkout = async (event: CalendarEventResponse, templateId: number) => {
+  try {
+    const updated = await planning.linkWorkoutToEvent(event.eventDate, event.id, templateId);
+    await workouts.loadDaySessions(event.eventDate);
+    selectedEvent.value = updated;
+    clearEventFormErrors();
+    feedback.value = 'Scheda personale collegata.';
+    error.value = '';
+  } catch (err) {
+    eventFormError.value = getErrorMessage(err);
+    eventFormFieldErrors.value = extractFieldErrors(err);
+    error.value = '';
   }
 };
 

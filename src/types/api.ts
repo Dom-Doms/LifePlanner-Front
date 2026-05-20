@@ -76,6 +76,10 @@ export interface ParticipantDto {
   registeredUserId?: number | null;
   displayName: string;
   participantType: ParticipantType;
+  hidden?: boolean | null;
+  linkedWorkoutSessionId?: number | null;
+  completed?: boolean | null;
+  completedAt?: string | null;
 }
 
 export interface CalendarEventResponse {
@@ -98,10 +102,36 @@ export interface CalendarEventResponse {
   reminderSentAt?: string | null;
   completed?: boolean | null;
   completedAt?: string | null;
+  owner?: boolean | null;
+  participant?: boolean | null;
+  hidden?: boolean | null;
+  linkedWorkoutSessionId?: number | null;
+  ownerWorkoutSessionId?: number | null;
+  canEdit?: boolean | null;
+  canRemoveForMe?: boolean | null;
+  needsWorkoutLink?: boolean | null;
   participants: ParticipantDto[];
 }
 
-export type CalendarEventRequest = Omit<CalendarEventResponse, 'id' | 'reminderSentAt' | 'completed' | 'completedAt'>;
+export type CalendarEventRequest = Omit<
+  CalendarEventResponse,
+  | 'id'
+  | 'reminderSentAt'
+  | 'completed'
+  | 'completedAt'
+  | 'owner'
+  | 'participant'
+  | 'hidden'
+  | 'linkedWorkoutSessionId'
+  | 'ownerWorkoutSessionId'
+  | 'canEdit'
+  | 'canRemoveForMe'
+  | 'needsWorkoutLink'
+>;
+
+export interface EventWorkoutLinkRequest {
+  templateId: number;
+}
 
 export interface WorkoutExerciseDto {
   id?: number | null;

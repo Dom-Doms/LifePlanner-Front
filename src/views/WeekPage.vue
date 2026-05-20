@@ -68,6 +68,7 @@
       @close="closeSelectedEventModal"
       @save="saveEvent"
       @delete="deleteEvent"
+      @link-workout="linkParticipantWorkout"
     />
   </AppLayout>
 </template>
@@ -175,6 +176,18 @@ const deleteEvent = async (event: CalendarEventResponse) => {
     await load();
   } catch (err) {
     eventFormError.value = getErrorMessage(err);
+  }
+};
+
+const linkParticipantWorkout = async (event: CalendarEventResponse, templateId: number) => {
+  try {
+    const updated = await planning.linkWorkoutToEvent(event.eventDate, event.id, templateId);
+    selectedEvent.value = updated;
+    clearEventFormErrors();
+    await load();
+  } catch (err) {
+    eventFormError.value = getErrorMessage(err);
+    eventFormFieldErrors.value = extractFieldErrors(err);
   }
 };
 
