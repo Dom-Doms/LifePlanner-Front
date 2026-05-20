@@ -10,23 +10,23 @@
         <p v-if="generalError" class="form-alert" role="alert">{{ generalError }}</p>
 
         <label class="form-field" :class="{ 'form-field--invalid': Boolean(fieldErrors.title) }" data-error-key="title">
-          <input v-model.trim="draft.title" placeholder="Titolo" :aria-invalid="Boolean(fieldErrors.title)" />
+          <input v-model.trim="draft.title" placeholder="Titolo" :aria-invalid="Boolean(fieldErrors.title)" :disabled="!canEditEvent" />
           <span v-if="fieldErrors.title" class="field-error">{{ fieldErrors.title }}</span>
         </label>
 
         <label class="form-field">
-          <textarea v-model.trim="draft.description" placeholder="Descrizione completa"></textarea>
+          <textarea v-model.trim="draft.description" placeholder="Descrizione completa" :disabled="!canEditEvent"></textarea>
         </label>
 
         <div class="form-grid">
           <label class="form-field" :class="{ 'form-field--invalid': Boolean(fieldErrors.eventDate) }" data-error-key="eventDate">
             <span class="field-label">Data</span>
-            <input v-model="draft.eventDate" type="date" :aria-invalid="Boolean(fieldErrors.eventDate)" />
+            <input v-model="draft.eventDate" type="date" :aria-invalid="Boolean(fieldErrors.eventDate)" :disabled="!canEditEvent" />
             <span v-if="fieldErrors.eventDate" class="field-error">{{ fieldErrors.eventDate }}</span>
           </label>
           <label v-if="showEventTypeSelect" class="form-field">
             <span class="field-label">Tipo evento</span>
-            <select v-model="draft.type">
+            <select v-model="draft.type" :disabled="!canEditEvent">
               <option value="STUDY">Studio</option>
               <option value="EXAM">Esame</option>
               <option value="PERSONAL">Personale</option>
@@ -51,7 +51,7 @@
             <select
               v-model.number="draft.workoutTemplateId"
               :aria-invalid="Boolean(fieldErrors.workoutTemplateId)"
-              :disabled="!templates.length"
+              :disabled="!templates.length || !canEditEvent"
             >
               <option :value="null" disabled>Scegli scheda allenamento</option>
               <option v-for="template in templates" :key="template.id" :value="template.id">
@@ -66,22 +66,22 @@
           </RouterLink>
         </section>
 
-        <label class="check-row"><input v-model="draft.allDay" type="checkbox" /> Tutto il giorno</label>
+        <label class="check-row"><input v-model="draft.allDay" type="checkbox" :disabled="!canEditEvent" /> Tutto il giorno</label>
         <div v-if="!draft.allDay" class="form-field" :class="{ 'form-field--invalid': Boolean(fieldErrors.times) }" data-error-key="times">
           <div class="form-grid">
-            <input v-model="draft.startTime" type="time" :aria-invalid="Boolean(fieldErrors.times)" />
-            <input v-model="draft.endTime" type="time" :aria-invalid="Boolean(fieldErrors.times)" />
+            <input v-model="draft.startTime" type="time" :aria-invalid="Boolean(fieldErrors.times)" :disabled="!canEditEvent" />
+            <input v-model="draft.endTime" type="time" :aria-invalid="Boolean(fieldErrors.times)" :disabled="!canEditEvent" />
           </div>
           <span v-if="fieldErrors.times" class="field-error">{{ fieldErrors.times }}</span>
         </div>
 
         <label class="form-field">
-          <input v-model.trim="draft.location" placeholder="Luogo" />
+          <input v-model.trim="draft.location" placeholder="Luogo" :disabled="!canEditEvent" />
         </label>
 
         <div class="form-grid">
           <label class="form-field">
-            <select v-model="draft.recurrenceType">
+            <select v-model="draft.recurrenceType" :disabled="!canEditEvent">
               <option value="NONE">Nessuna ripetizione</option>
               <option value="DAILY">Ogni giorno</option>
               <option value="WEEKLY">Ogni settimana</option>
@@ -95,14 +95,14 @@
             :class="{ 'form-field--invalid': Boolean(fieldErrors.recurrenceUntil) }"
             data-error-key="recurrenceUntil"
           >
-            <input v-model="draft.recurrenceUntil" type="date" :aria-invalid="Boolean(fieldErrors.recurrenceUntil)" />
+            <input v-model="draft.recurrenceUntil" type="date" :aria-invalid="Boolean(fieldErrors.recurrenceUntil)" :disabled="!canEditEvent" />
             <span v-if="fieldErrors.recurrenceUntil" class="field-error">{{ fieldErrors.recurrenceUntil }}</span>
           </label>
         </div>
 
         <label class="form-field" :class="{ 'form-field--invalid': Boolean(fieldErrors.reminder) }" data-error-key="reminder">
           <span class="field-label">Promemoria</span>
-          <select v-model.number="reminderOption" :aria-invalid="Boolean(fieldErrors.reminder)">
+          <select v-model.number="reminderOption" :aria-invalid="Boolean(fieldErrors.reminder)" :disabled="!canEditEvent">
             <option :value="0">Nessuno</option>
             <option :value="10">10 minuti prima</option>
             <option :value="30">30 minuti prima</option>
@@ -112,7 +112,7 @@
           <span v-if="fieldErrors.reminder" class="field-error">{{ fieldErrors.reminder }}</span>
         </label>
 
-        <section class="sub-panel">
+        <section v-if="canEditEvent" class="sub-panel">
           <strong>Partecipanti</strong>
           <div class="participant-search">
             <input v-model.trim="userQuery" placeholder="Cerca utente registrato" @input="runUserSearch" />
@@ -137,8 +137,20 @@
           <strong>Allenamento collegato</strong>
           <p class="empty-state">{{ linkedWorkoutLabel }}</p>
           <p v-if="completedLabel" class="workout-completed-note">{{ completedLabel }}</p>
+          <div v-if="showParticipantWorkoutLink" class="form-field">
+            <span class="field-label">Collega una tua scheda</span>
+            <select v-model.number="participantTemplateId" :disabled="!templates.length">
+              <option :value="null" disabled>Scegli scheda allenamento</option>
+              <option v-for="template in templates" :key="template.id" :value="template.id">
+                {{ template.name }}
+              </option>
+            </select>
+            <button class="secondary-btn secondary-btn--full" type="button" :disabled="!participantTemplateId" @click="linkParticipantWorkout">
+              Collega scheda
+            </button>
+          </div>
           <RouterLink
-            v-if="draft.workoutTemplateId"
+            v-if="draft.workoutTemplateId && !props.event?.needsWorkoutLink"
             class="secondary-btn secondary-btn--full"
             :to="`/workouts/${draft.workoutTemplateId}`"
           >
@@ -148,8 +160,10 @@
       </div>
 
       <div class="modal-actions event-modal__footer">
-        <button v-if="event" class="danger-btn" type="button" @click="$emit('delete', event)">Elimina</button>
-        <button class="primary-btn" type="submit">{{ event ? 'Salva modifiche' : 'Salva evento' }}</button>
+        <button v-if="event && (canEditEvent || event.canRemoveForMe)" class="danger-btn" type="button" @click="$emit('delete', event)">
+          {{ canEditEvent ? 'Elimina' : 'Rimuovi per me' }}
+        </button>
+        <button v-if="canEditEvent" class="primary-btn" type="submit">{{ event ? 'Salva modifiche' : 'Salva evento' }}</button>
       </div>
     </form>
   </div>
@@ -180,6 +194,7 @@ const emit = defineEmits<{
   close: [];
   save: [payload: CalendarEventRequest, id?: number];
   delete: [event: CalendarEventResponse];
+  linkWorkout: [event: CalendarEventResponse, templateId: number];
 }>();
 
 const base = props.event;
@@ -206,6 +221,7 @@ const userQuery = ref('');
 const userResults = ref<UserResponse[]>([]);
 const freeParticipantName = ref('');
 const reminderOption = ref(base?.reminderEnabled ? base.reminderMinutesBefore ?? 30 : 0);
+const participantTemplateId = ref<number | null>(null);
 const searchError = ref('');
 const searchDone = ref(false);
 const generalError = ref('');
@@ -216,11 +232,15 @@ let searchTimer: number | undefined;
 
 const isWorkoutEvent = computed(() => draft.type === 'WORKOUT');
 const isSavedWorkoutEvent = computed(() => Boolean(props.event) && isWorkoutEvent.value);
+const canEditEvent = computed(() => !props.event || props.event.canEdit === true || (props.event.canEdit == null && props.event.owner !== false));
+const isParticipantWorkoutEvent = computed(() => Boolean(props.event?.participant) && !canEditEvent.value && isWorkoutEvent.value);
+const showParticipantWorkoutLink = computed(() => isParticipantWorkoutEvent.value && props.event?.needsWorkoutLink === true);
 const fixedWorkoutType = computed(() => props.workoutMode || isSavedWorkoutEvent.value);
 const showEventTypeSelect = computed(() => !fixedWorkoutType.value);
-const showWorkoutTemplate = computed(() => isWorkoutEvent.value);
+const showWorkoutTemplate = computed(() => isWorkoutEvent.value && canEditEvent.value);
 const linkedWorkoutLabel = computed(() => {
   if (!isWorkoutEvent.value) return '';
+  if (isParticipantWorkoutEvent.value && props.event?.needsWorkoutLink) return 'Collega prima una tua scheda.';
   const template = props.templates.find((item) => item.id === draft.workoutTemplateId);
   if (template) return template.name;
   if (draft.workoutSessionId) return `Sessione allenamento #${draft.workoutSessionId}`;
@@ -345,6 +365,7 @@ const removeParticipant = (participant: ParticipantDto) => {
 };
 
 const submit = () => {
+  if (!canEditEvent.value) return;
   if (!validate()) {
     void nextTick(() => scrollToFirstError());
     return;
@@ -362,5 +383,10 @@ const submit = () => {
     },
     props.event?.id,
   );
+};
+
+const linkParticipantWorkout = () => {
+  if (!props.event || !participantTemplateId.value) return;
+  emit('linkWorkout', props.event, participantTemplateId.value);
 };
 </script>

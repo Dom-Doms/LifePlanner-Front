@@ -14,12 +14,22 @@ const tickMs = 1000;
 export const flattenWorkoutTemplate = (template: WorkoutTemplateResponse): ExecutableWorkoutStep[] => {
   const sequence: ExecutableWorkoutStep[] = [];
   const topSteps = template.steps?.length ? template.steps : legacyExercisesToSteps(template);
-  topSteps.forEach((step) => sequence.push(toExecutable(step, -1, 1, 1, null)));
+  const items = [
+    ...topSteps.map((step) => ({ type: 'step' as const, sortOrder: step.sortOrder, step })),
+    ...(template.blocks ?? []).map((block, blockIndex) => ({ type: 'block' as const, sortOrder: block.sortOrder, block, blockIndex })),
+  ].sort((a, b) => a.sortOrder - b.sortOrder);
 
-  (template.blocks ?? []).forEach((block, blockIndex) => {
-    const repeat = Math.max(1, block.repeatCount || 1);
+  items.forEach((item) => {
+    if (item.type === 'step') {
+      sequence.push(toExecutable(item.step, -1, 1, 1, null));
+      return;
+    }
+    const repeat = Math.min(99, Math.max(1, item.block.repeatCount || 1));
     for (let lap = 1; lap <= repeat; lap += 1) {
-      block.steps.forEach((step) => sequence.push(toExecutable(step, blockIndex, lap, repeat, block)));
+      item.block.steps
+        .slice()
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .forEach((step) => sequence.push(toExecutable(step, item.blockIndex, lap, repeat, item.block)));
     }
   });
   return sequence.map((step, index) => ({ ...step, sortOrder: index }));

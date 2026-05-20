@@ -14,12 +14,14 @@
         v-for="event in allDayEvents"
         :key="event.id"
         class="event-card event-card--button event-card--all-day"
-        :class="{ 'event-card--completed': event.type === 'WORKOUT' && event.completed }"
+        :class="{
+          'event-card--workout': event.type === 'WORKOUT',
+          'event-card--completed': event.type === 'WORKOUT' && event.completed,
+        }"
         type="button"
         @click="$emit('select', event)"
       >
         <strong>{{ event.title }}</strong>
-        <small>Tutto il giorno</small>
         <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">&#10003;</span>
       </button>
     </div>
@@ -62,6 +64,7 @@
           <button
             class="event-card event-card--button timeline-event-card"
             :class="{
+              'event-card--workout': event.type === 'WORKOUT',
               'event-card--completed': event.type === 'WORKOUT' && event.completed,
               'timeline-event-card--tiny': event.isTiny,
               'timeline-event-card--compact': event.isCompact,
@@ -71,10 +74,7 @@
             @click="$emit('select', event)"
           >
             <strong>{{ event.title }}</strong>
-            <small class="timeline-event-time">{{ event.startTime?.slice(0, 5) }}<span v-if="event.endTime"> - {{ event.endTime.slice(0, 5) }}</span></small>
-            <small>{{ labelFor(event.type) }}<span v-if="event.location"> - {{ event.location }}</span></small>
             <span v-if="event.type === 'WORKOUT' && event.completed" class="event-completed-check" aria-label="Workout completato">&#10003;</span>
-            <p v-if="event.participants.length">{{ event.participants.map((p) => p.displayName).join(', ') }}</p>
           </button>
         </article>
       </div>
@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import type { CalendarEventResponse, EventType } from '@/types/api';
+import type { CalendarEventResponse } from '@/types/api';
 
 type TimelineMode = 'FULL_DAY' | 'COMPACT_EVENTS';
 
@@ -260,14 +260,4 @@ onUnmounted(() => {
   window.clearInterval(intervalId);
 });
 
-const labels: Record<EventType, string> = {
-  STUDY: 'Studio',
-  EXAM: 'Esame',
-  PERSONAL: 'Personale',
-  GYM: 'Palestra',
-  WORKOUT: 'Allenamento',
-  OTHER: 'Altro',
-};
-
-const labelFor = (type: EventType) => labels[type] ?? type;
 </script>

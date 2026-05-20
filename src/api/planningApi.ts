@@ -6,6 +6,7 @@ import type {
   DailyPlanResponse,
   DayContextRequest,
   DayContextResponse,
+  EventWorkoutLinkRequest,
 } from '@/types/api';
 
 export const getDayContexts = async () => {
@@ -64,4 +65,9 @@ export const updateEvent = async (id: number, payload: CalendarEventRequest) => 
 
 export const deleteEvent = async (id: number) => {
   await httpClient.delete(`/events/${id}`);
+};
+
+export const linkEventWorkout = async (id: number, payload: EventWorkoutLinkRequest) => {
+  const { data } = await httpClient.post<CalendarEventResponse>(`/events/${id}/workout-link`, payload);
+  return data;
 };

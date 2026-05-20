@@ -8,6 +8,7 @@ import {
   getDailyPlan,
   getDayContexts,
   getEvents,
+  linkEventWorkout,
   getMonthPlans,
   getWeekPlans,
   updateDailyPlan,
@@ -89,6 +90,12 @@ export const usePlanningStore = defineStore('planning', () => {
     await loadDay(date);
   };
 
+  const linkWorkoutToEvent = async (date: string, eventId: number, templateId: number) => {
+    const saved = await linkEventWorkout(eventId, { templateId });
+    await loadDay(date);
+    return saved;
+  };
+
   const loadWeek = async (startDate: string, endDate: string) => {
     const [plans, rangeEvents] = await Promise.all([getWeekPlans(startDate), getEvents(startDate, endDate)]);
     weekPlans.value = plans;
@@ -117,6 +124,7 @@ export const usePlanningStore = defineStore('planning', () => {
     setDayContext,
     saveEvent,
     removeEvent,
+    linkWorkoutToEvent,
     loadWeek,
     loadMonth,
   };

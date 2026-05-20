@@ -7,6 +7,8 @@ import type {
   WorkoutSessionResponse,
   WorkoutTemplateRequest,
   WorkoutTemplateResponse,
+  WorkoutTemplateShareRequest,
+  WorkoutTemplateShareResponse,
 } from '@/types/api';
 
 export const getWorkoutTemplates = async () => {
@@ -31,6 +33,11 @@ export const updateWorkoutTemplate = async (id: number, payload: WorkoutTemplate
 
 export const deleteWorkoutTemplate = async (id: number) => {
   await httpClient.delete(`/workout-templates/${id}`);
+};
+
+export const shareWorkoutTemplate = async (id: number, payload: WorkoutTemplateShareRequest) => {
+  const { data } = await httpClient.post<WorkoutTemplateShareResponse>(`/workout-templates/${id}/share`, payload);
+  return data;
 };
 
 export const getWorkoutSessions = async (from: string, to: string) => {
