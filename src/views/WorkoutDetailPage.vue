@@ -110,6 +110,7 @@ import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import { getWorkoutTemplate } from '@/api/workoutsApi';
 import { searchUsers } from '@/api/usersApi';
+import { useWorkoutAudio } from '@/composables/useWorkoutAudio';
 import { flattenWorkoutTemplate } from '@/composables/useWorkoutRunner';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import type { UserResponse, WorkoutBlockDto, WorkoutStepDto, WorkoutTemplateResponse } from '@/types/api';
@@ -119,6 +120,7 @@ import { estimateWorkoutBlockSeconds, estimateWorkoutTemplateSeconds, formatWork
 const route = useRoute();
 const router = useRouter();
 const workouts = useWorkoutStore();
+const workoutAudio = useWorkoutAudio();
 const template = ref<WorkoutTemplateResponse | null>(null);
 const collapsed = ref<Record<number, boolean>>({});
 const starting = ref(false);
@@ -179,6 +181,7 @@ const start = async () => {
   if (!template.value) return;
   try {
     starting.value = true;
+    void workoutAudio.unlock();
     const run = await workouts.startRun(template.value.id, workoutSessionId.value);
     await router.push({ path: `/workout-runs/${run.id}`, query: eventDate.value ? { eventDate: eventDate.value } : undefined });
   } catch (err) {

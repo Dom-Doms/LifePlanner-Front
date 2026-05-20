@@ -10,13 +10,6 @@
         <button class="secondary-btn" type="button" @click="showList = !showList">Lista</button>
       </header>
 
-      <Transition name="workout-step-banner">
-        <section v-if="stepNotifier.banner.value" class="workout-step-banner" :class="`workout-step-banner--${stepNotifier.bannerTone.value}`">
-          <strong>{{ stepNotifier.banner.value.title }}</strong>
-          <span>{{ stepNotifier.banner.value.body }}</span>
-        </section>
-      </Transition>
-
       <section v-if="runner.currentStep.value" class="workout-run__main" :class="`workout-run__main--${runner.currentStep.value.stepType.toLowerCase()}`">
         <div v-if="runner.currentStep.value.blockTitle" class="workout-run__set-chip">
           <strong>Serie {{ runner.currentStep.value.lap }}/{{ runner.currentStep.value.totalLaps }}</strong>
@@ -72,6 +65,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useWorkoutAudio } from '@/composables/useWorkoutAudio';
 import { useWorkoutRunner } from '@/composables/useWorkoutRunner';
 import { useWorkoutStepNotifier } from '@/composables/useWorkoutStepNotifier';
 import { usePlanningStore } from '@/stores/planningStore';
@@ -83,7 +77,12 @@ const router = useRouter();
 const planning = usePlanningStore();
 const workouts = useWorkoutStore();
 const { activeRun } = storeToRefs(workouts);
-const runner = useWorkoutRunner(activeRun);
+const workoutAudio = useWorkoutAudio();
+const runner = useWorkoutRunner(activeRun, {
+  onTimedStepComplete: () => {
+    void workoutAudio.signalTimedStepComplete();
+  },
+});
 const stepNotifier = useWorkoutStepNotifier();
 const run = computed(() => activeRun.value);
 const showList = ref(false);
@@ -109,6 +108,7 @@ const persistState = async () => {
 
 const togglePause = async () => {
   if (!run.value) return;
+  void workoutAudio.unlock();
   if (runner.isPaused.value) {
     runner.resume();
     await workouts.resumeRun(run.value.id);
@@ -119,16 +119,19 @@ const togglePause = async () => {
 };
 
 const skip = async () => {
+  void workoutAudio.unlock();
   runner.next();
   await persistState();
 };
 
 const previous = async () => {
+  void workoutAudio.unlock();
   runner.previous();
   await persistState();
 };
 
 const completeStep = async () => {
+  void workoutAudio.unlock();
   runner.completeStep();
   await persistState();
 };
